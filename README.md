@@ -20,6 +20,17 @@ sock.set_workspace(column, row, monitor_output)
 sock.set_workspace(column, row, monitor_output, view_id)
 
 ```
+
+## Move a window to another workspace
+```
+column = 0
+row = 2
+monitor_output = 1
+view_id = 1
+sock.set_workspace(column, row, monitor_output, view_id)
+
+```
+
 ## Get the list of all windows
 ```
 sock.list_views()
