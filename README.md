@@ -32,3 +32,8 @@ view_id = 1
 sock.set_focus(view_id)
 ```
 
+## List devices
+```
+sock.list_input_devices()
+```
+
