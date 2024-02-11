@@ -39,7 +39,6 @@ sock.list_input_devices()
 
 ## watch events
 ```
-
 sock.watch()
 
 while True:
