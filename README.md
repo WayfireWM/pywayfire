@@ -13,6 +13,11 @@ addr = os.getenv("WAYFIRE_SOCKET")
 sock = waypy.WayfireSocket(addr)
 ```
 
+## Get focused window
+```
+sock.get_focused_view()
+```
+
 ## Go to another workspace
 ```
 column = 0
