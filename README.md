@@ -37,3 +37,19 @@ sock.set_focus(view_id)
 sock.list_input_devices()
 ```
 
+## watch events
+```
+sock.watch()
+msg = sock.read_message()
+if "event" in msg:
+    event = msg["event"]
+    window_created = "view-mapped"
+    window_closed = "view-unmapped"
+    if event == window_created:
+        print("do something")
+    if event == window_closed:
+        print("do something else")
+```
+
+
+
