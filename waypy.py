@@ -81,6 +81,10 @@ class WayfireSocket:
         message["data"]["id"] = view_id
         return self.send_json(message)
 
+    def get_focused_view(self):
+        message = get_msg_template("window-rules/get-focused-view")
+        return self.send_json(message)
+
     def set_always_on_top(self, view_id: int, always_on_top: bool):
         message = get_msg_template("wm-actions/set-always-on-top")
         message["data"]["view_id"] = view_id
