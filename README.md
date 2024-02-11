@@ -1,6 +1,6 @@
 
-#### waypy serves as a python library, offering bindings specifically designed to interact with the wayfire compositor.
-#### with waypy, effortlessly access information about windows, workspaces, and monitors within an active compositor instance. Additionally, waypy provides an event watch feature.
+waypy serves as a python library, offering bindings specifically designed to interact with the wayfire compositor.
+with waypy, effortlessly access information about windows, workspaces, and monitors within an active compositor instance. Additionally, waypy provides an event watch feature.
 
 
 # Usage
