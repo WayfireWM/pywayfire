@@ -12,7 +12,7 @@ sock = ws.WayfireSocket(addr)
 ```
 column = 0
 row = 2
-monitor_output = 1
+monitor_output_id = 1
 sock.set_workspace(column, row, monitor_output)
 ```
 
@@ -20,7 +20,7 @@ sock.set_workspace(column, row, monitor_output)
 ```
 column = 0
 row = 2
-monitor_output = 1
+monitor_output_id = 1
 view_id = 1
 sock.set_workspace(column, row, monitor_output, view_id)
 
