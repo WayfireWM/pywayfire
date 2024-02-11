@@ -1,11 +1,11 @@
 # Usage
 
 ```
-import wayfire_socket as ws
+import waypy
 import os
 
 addr = os.getenv("WAYFIRE_SOCKET")
-sock = ws.WayfireSocket(addr)
+sock = waypy.WayfireSocket(addr)
 ```
 
 ## Go to another workspace
