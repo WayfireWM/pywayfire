@@ -1,4 +1,4 @@
-#### Usage
+# Usage
 
 ```
 import wayfire_socket as ws
