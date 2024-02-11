@@ -102,7 +102,31 @@ class WayfireSocket:
         message = get_msg_template("input/list-devices")
         return self.send_json(message)
 
-    def set_workspace(self, x, y, output_id, view_id=None):
+    def total_workspaces(self):
+        # >>> need the ipc method here to set the total_workspaces
+        # while that, using static value
+        total_workspaces = 9
+
+        # Calculate the number of rows and columns based on the total number of workspaces
+        rows = int(total_workspaces**0.5)
+        cols = (total_workspaces + rows - 1) // rows
+
+        # Initialize the dictionary to store workspace numbers and their coordinates
+        workspaces = {}
+
+        # Loop through each row and column to assign workspace numbers and coordinates
+        for row in range(rows):
+            for col in range(cols):
+                workspace_num = row * cols + col + 1
+                if workspace_num <= total_workspaces:
+                    workspaces[workspace_num] = [row, col]
+        return workspaces
+
+    def set_workspace(self, workspace_number, view_id=None):
+        workspaces_coordinates = self.total_workspaces()
+        y, x = workspaces_coordinates[workspace_number]
+        focused_view = self.get_focused_view()
+        output_id = focused_view["info"]["output"]
         message = get_msg_template("vswitch/set-workspace")
         message["data"]["x"] = x
         message["data"]["y"] = y
