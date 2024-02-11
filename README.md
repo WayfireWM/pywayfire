@@ -13,7 +13,12 @@ sock = ws.WayfireSocket(addr)
 column = 0
 row = 2
 monitor_output = 1
+view_id = 1
 sock.set_workspace(column, row, monitor_output)
+
+#or move a window to another workspace
+sock.set_workspace(column, row, monitor_output, view_id)
+
 ```
 ## Get the list of all windows
 ```
