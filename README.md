@@ -20,10 +20,7 @@ sock.get_focused_view()
 
 ## Go to another workspace
 ```
-column = 0
-row = 2
-monitor_output_id = 1
-sock.set_workspace(column, row, monitor_output_id)
+sock.set_workspace(2)
 ```
 
 ## Move a window to another workspace
