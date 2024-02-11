@@ -6,7 +6,9 @@ import os
 
 addr = os.getenv("WAYFIRE_SOCKET")
 sock = ws.WayfireSocket(addr)
+```
 
+```
 #go to another workspace
 column = 0
 row = 2
