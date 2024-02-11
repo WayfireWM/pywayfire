@@ -13,23 +13,22 @@ addr = os.getenv("WAYFIRE_SOCKET")
 sock = waypy.WayfireSocket(addr)
 ```
 
-## Get focused window
+## Get focused window info
 ```
-sock.get_focused_view()
+sock.get_focused_view()["info"]
 ```
 
 ## Go to another workspace
 ```
-sock.set_workspace(2)
+workspace_number = 2
+sock.set_workspace(workspace_number)
 ```
 
-## Move a window to another workspace
+## Move focused window to another workspace
 ```
-column = 0
-row = 2
-monitor_output_id = 1
-view_id = 1
-sock.set_workspace(column, row, monitor_output_id, view_id)
+view_id = sock.get_focused_view()["info"]["id"]
+workspace_number = 2
+sock.set_workspace(workspace_number, view_id)
 
 ```
 
