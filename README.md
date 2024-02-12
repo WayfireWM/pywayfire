@@ -1,4 +1,3 @@
-
 Waypy serves as a python library, offering bindings specifically designed to interact with the wayfire compositor.
 With waypy, effortlessly access information about windows, workspaces, and monitors within an active compositor instance. Additionally, waypy provides an event watch feature.
 
@@ -15,13 +14,12 @@ sock = waypy.WayfireSocket(addr)
 
 ## Get focused window info
 ```
-sock.get_focused_view()["info"]
+sock.get_focused_view()
 ```
 
 ## Get pid from focused window
 ```
-view_id = sock.get_focused_view()["info"]["id"]
-sock.get_view_pid(view_id)
+sock.get_focused_view_pid()
 ```
 
 ## Get active workspace number
@@ -42,7 +40,7 @@ sock.set_workspace(workspace_number)
 
 ## Move focused window to another workspace
 ```
-view_id = sock.get_focused_view()["info"]["id"]
+view_id = sock.get_focused_view()["id"]
 workspace_number = 2
 sock.set_workspace(workspace_number, view_id)
 
