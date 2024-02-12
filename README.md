@@ -18,6 +18,12 @@ sock = waypy.WayfireSocket(addr)
 sock.get_focused_view()["info"]
 ```
 
+## Get pid from focused window
+```
+view_id = sock.get_focused_view()["info"]["id"]
+sock.get_view_pid(view_id)
+```
+
 ## Go to another workspace
 ```
 workspace_number = 2
