@@ -85,12 +85,28 @@ class WayfireSocket:
         message = get_msg_template("window-rules/get-focused-view")
         return self.send_json(message)["info"]
 
+    def get_focused_view_info(self):
+        id = self.get_focused_view_id()
+        return [i for i in self.list_views() if i["id"] == id][0]
+
     def get_focused_view_pid(self):
         view_id = self.get_focused_view()["id"]
         return self.get_view_pid(view_id)
 
     def is_focused_view_fullscreen(self):
         return self.get_focused_view()["fullscreen"]
+
+    def get_focused_view_role(self):
+        return self.get_focused_view_info()["role"]
+
+    def get_focused_view_tiled(self):
+        return self.get_focused_view()["tiled"]
+
+    def get_focused_view_bbox(self):
+        return self.get_focused_view()["bbox"]
+
+    def get_focused_view_layer(self):
+        return self.get_focused_view()["layer"]
 
     def get_focused_view_id(self):
         return self.get_focused_view()["id"]
@@ -103,6 +119,9 @@ class WayfireSocket:
 
     def get_focused_view_type(self):
         return self.get_focused_view()["type"]
+
+    def get_focused_view_app_id(self):
+        return self.get_focused_view()["app-id"]
 
     def get_focused_output(self):
         focused_view = self.get_focused_view()
@@ -166,6 +185,54 @@ class WayfireSocket:
         message = get_msg_template("window-rules/get-view-pid")
         message["data"]["id"] = view_id
         return self.send_json(message)
+
+    def get_view(self, view_id):
+        message = get_msg_template("window-rules/view-info")
+        message["data"]["id"] = view_id
+        return self.send_json(message)["info"]
+
+    def get_view_info(self, view_id):
+        info = [i for i in self.list_views() if i["id"] == view_id]
+        if info:
+            return info[0]
+        else:
+            return
+
+    def get_view_output(self, view_id):
+        return self.get_view(view_id)["output"]
+
+    def is_view_fullscreen(self, view_id):
+        return self.get_view(view_id)["fullscreen"]
+
+    def is_view_focusable(self, view_id):
+        return self.get_view(view_id)["focusable"]
+
+    def get_view_geometry(self, view_id):
+        return self.get_view(view_id)["geometry"]
+
+    def is_view_minimized(self, view_id):
+        return self.get_view(view_id)["minimized"]
+
+    def get_view_tiled_edges(self, view_id):
+        return self.get_view(view_id)["tiled_edges"]
+
+    def get_view_title(self, view_id):
+        return self.get_view(view_id)["title"]
+
+    def get_view_type(self, view_id):
+        return self.get_view(view_id)["type"]
+
+    def get_view_app_id(self, view_id):
+        return self.get_view(view_id)["app-id"]
+
+    def get_view_role(self, view_id):
+        return self.get_view_info(view_id)["role"]
+
+    def get_view_bbox(self, view_id):
+        return self.get_view_info(view_id)["bbox"]
+
+    def get_view_layer(self, view_id):
+        return self.get_view_info(view_id)["layer"]
 
     def total_workspaces(self):
         winfo = self.get_active_workspace_info()
