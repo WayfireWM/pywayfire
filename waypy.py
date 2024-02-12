@@ -102,6 +102,11 @@ class WayfireSocket:
         message = get_msg_template("input/list-devices")
         return self.send_json(message)
 
+    def get_view_pid(self, view_id):
+        message = get_msg_template("window-rules/get-view-pid")
+        message["data"]["id"] = view_id
+        return self.send_json(message)
+
     def total_workspaces(self):
         # >>> need the ipc method here to set the total_workspaces
         # while that, using static value
