@@ -24,6 +24,11 @@ view_id = sock.get_focused_view()["info"]["id"]
 sock.get_view_pid(view_id)
 ```
 
+## Get focused monitor info
+```
+sock.get_focused_output()
+```
+
 ## Go to another workspace
 ```
 workspace_number = 2
