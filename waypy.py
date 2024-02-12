@@ -90,6 +90,42 @@ class WayfireSocket:
         output_id = focused_view["info"]["output"]
         return self.query_output(output_id)
 
+    def coordinates_to_number(self, rows, cols, coordinates):
+        row, col = coordinates
+        if 0 <= row < rows and 0 <= col < cols:
+            return row * cols + col + 1
+        else:
+            return None
+
+    def get_active_workspace_number(self):
+        focused_output = self.get_focused_output()
+        x = focused_output["workspace"]["x"]
+        y = focused_output["workspace"]["y"]
+        workspaces_coordinates = self.total_workspaces()
+        coordinates_to_find = [
+            i for i in workspaces_coordinates.values() if [y, x] == i
+        ][0]
+        total_workspaces = 9
+        rows = int(total_workspaces**0.5)
+        cols = (total_workspaces + rows - 1) // rows
+        workspace_number = self.coordinates_to_number(rows, cols, coordinates_to_find)
+        return workspace_number
+
+    def get_active_workspace_info(self):
+        return self.get_focused_output()["workspace"]
+
+    def get_focused_output_name(self):
+        return self.get_focused_output()["name"]
+
+    def get_focused_output_id(self):
+        return self.get_focused_output()["id"]
+
+    def get_focused_output_geometry(self):
+        return self.get_focused_output()["geometry"]
+
+    def get_focused_output_workarea(self):
+        return self.get_focused_output()["workarea"]
+
     def set_always_on_top(self, view_id: int, always_on_top: bool):
         message = get_msg_template("wm-actions/set-always-on-top")
         message["data"]["view_id"] = view_id
@@ -113,9 +149,8 @@ class WayfireSocket:
         return self.send_json(message)
 
     def total_workspaces(self):
-        # >>> need the ipc method here to set the total_workspaces
-        # while that, using static value
-        total_workspaces = 9
+        winfo = self.get_active_workspace_info()
+        total_workspaces = winfo["grid_height"] * winfo["grid_width"]
 
         # Calculate the number of rows and columns based on the total number of workspaces
         rows = int(total_workspaces**0.5)
