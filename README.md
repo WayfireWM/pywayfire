@@ -68,7 +68,7 @@ sock.get_active_workspace_info()
 
 ## Get focused monitor info
 ```
-sock.get_focused_output-name()
+sock.get_focused_output_name()
 ```
 
 ## Get focused monitor id
@@ -83,7 +83,7 @@ sock.get_focused_output_geometry()
 
 ## Get focused monitor workarea
 ```
-sock.get_focused_output()["workarea"]
+sock.get_focused_output_workarea()
 ```
 
 ## Set focus
