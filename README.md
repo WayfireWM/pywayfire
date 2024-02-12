@@ -2,9 +2,13 @@ Waypy serves as a python library, offering bindings specifically designed to int
 With waypy, effortlessly access information about windows, workspaces, and monitors within an active compositor instance. Additionally, waypy provides an event watch feature.
 
 # install
+
+```
 git clone https://github.com/killown/waypy
 cd waypy
 python3 -m pip install .
+
+```
 
 # Usage
 
