@@ -46,6 +46,16 @@ workspace_number = 2
 sock.set_workspace(workspace_number)
 ```
 
+## Go to the next workspace
+```
+sock.go_next_workspace()
+```
+
+## Go to the previous workspace
+```
+sock.go_previous_workspace()
+```
+
 ## Move focused window to another workspace
 ```
 view_id = sock.get_focused_view()["id"]
