@@ -62,6 +62,10 @@ class WayfireSocket:
         message["data"]["id"] = output_id
         return self.send_json(message)
 
+    def scale_toggle(self):
+        message = get_msg_template("scale/toggle")
+        self.send_json(message)
+
     def list_views(self):
         return self.send_json(get_msg_template("window-rules/list-views"))
 
@@ -125,7 +129,7 @@ class WayfireSocket:
 
     def get_focused_output(self):
         focused_view = self.get_focused_view()
-        output_id = focused_view["info"]["output"]
+        output_id = focused_view["output"]
         return self.query_output(output_id)
 
     def coordinates_to_number(self, rows, cols, coordinates):
@@ -184,12 +188,32 @@ class WayfireSocket:
     def get_view_pid(self, view_id):
         message = get_msg_template("window-rules/get-view-pid")
         message["data"]["id"] = view_id
-        return self.send_json(message)
+        return self.send_json(message)["pid"]
 
     def get_view(self, view_id):
         message = get_msg_template("window-rules/view-info")
         message["data"]["id"] = view_id
         return self.send_json(message)["info"]
+
+    def go_next_workspace(self):
+        next = 1
+        current_workspace = self.get_active_workspace_number()
+        if current_workspace == 9:
+            next = 1
+        else:
+            next = current_workspace + 1
+
+        self.set_workspace(next)
+
+    def go_previous_workspace(self):
+        previous = 1
+        current_workspace = self.get_active_workspace_number()
+        if current_workspace == 1:
+            previous = 9
+        else:
+            previous = current_workspace - 1
+
+        self.set_workspace(previous)
 
     def get_view_info(self, view_id):
         info = [i for i in self.list_views() if i["id"] == view_id]
@@ -257,7 +281,7 @@ class WayfireSocket:
         workspaces_coordinates = self.total_workspaces()
         y, x = workspaces_coordinates[workspace_number]
         focused_view = self.get_focused_view()
-        output_id = focused_view["info"]["output"]
+        output_id = focused_view["output"]
         message = get_msg_template("vswitch/set-workspace")
         message["data"]["x"] = x
         message["data"]["y"] = y
