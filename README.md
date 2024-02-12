@@ -62,24 +62,23 @@ sock.query_output(monitor_output_id)
 
 ## Get active workspace info
 ```
-sock.get_focused_output()["workspace"]
+sock.get_active_workspace_info()
 ```
 
 
 ## Get focused monitor info
 ```
-sock.get_focused_output()["name"]
+sock.get_focused_output-name()
 ```
 
 ## Get focused monitor id
 ```
-sock.get_focused_output()["id"]
+sock.get_focused_output_id()
 ```
-
 
 ## Get focused monitor resolution
 ```
-sock.get_focused_output()["geometry"]
+sock.get_focused_output_geometry()
 ```
 
 ## Get focused monitor workarea
