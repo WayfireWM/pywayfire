@@ -53,10 +53,38 @@ sock.set_workspace(workspace_number, view_id)
 sock.list_views()
 ```
 
-## Monitor info
+## Monitor info fom given id
 ```
 monitor_output_id = 1
 sock.query_output(monitor_output_id)
+```
+
+
+## Get active workspace info
+```
+sock.get_focused_output()["workspace"]
+```
+
+
+## Get focused monitor info
+```
+sock.get_focused_output()["name"]
+```
+
+## Get focused monitor id
+```
+sock.get_focused_output()["id"]
+```
+
+
+## Get focused monitor resolution
+```
+sock.get_focused_output()["geometry"]
+```
+
+## Get focused monitor workarea
+```
+sock.get_focused_output()["geometry"]
 ```
 
 ## Set focus
