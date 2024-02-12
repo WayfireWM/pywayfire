@@ -84,7 +84,7 @@ sock.get_focused_output()["geometry"]
 
 ## Get focused monitor workarea
 ```
-sock.get_focused_output()["geometry"]
+sock.get_focused_output()["workarea"]
 ```
 
 ## Set focus
