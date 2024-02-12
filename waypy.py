@@ -83,7 +83,26 @@ class WayfireSocket:
 
     def get_focused_view(self):
         message = get_msg_template("window-rules/get-focused-view")
-        return self.send_json(message)
+        return self.send_json(message)["info"]
+
+    def get_focused_view_pid(self):
+        view_id = self.get_focused_view()["id"]
+        return self.get_view_pid(view_id)
+
+    def is_focused_view_fullscreen(self):
+        return self.get_focused_view()["fullscreen"]
+
+    def get_focused_view_id(self):
+        return self.get_focused_view()["id"]
+
+    def get_focused_view_output(self):
+        return self.get_focused_view()["output"]
+
+    def get_focused_view_title(self):
+        return self.get_focused_view()["title"]
+
+    def get_focused_view_type(self):
+        return self.get_focused_view()["type"]
 
     def get_focused_output(self):
         focused_view = self.get_focused_view()
