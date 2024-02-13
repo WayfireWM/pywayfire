@@ -230,7 +230,7 @@ def test_go_next_workspace():
     # Assuming you have a valid instance of WayfireSocket named 'sock'
     result = sock.go_next_workspace()
     # the next test will make return back to the original workspace
-    time.sleep(0.1)
+    time.sleep(2)
     assert result is True
 
 

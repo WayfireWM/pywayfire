@@ -1,5 +1,5 @@
 [project]
-name = "waypy"
+name = "wayfire"
 version = "0.0.1"
 authors = [{ name = "Thiago", email = "systemofdown@gmail.com" }]
 description = "wayfire compositor library"
