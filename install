@@ -1,0 +1,2 @@
+pytest tests/
+python3 -m pip install .

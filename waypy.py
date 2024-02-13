@@ -65,9 +65,36 @@ class WayfireSocket:
     def scale_toggle(self):
         message = get_msg_template("scale/toggle")
         self.send_json(message)
+        return True
+
+    def scale_leave(self):
+        # only works in the fork
+        message = get_msg_template("scale/leave")
+        self.send_json(message)
+        return True
 
     def list_views(self):
-        return self.send_json(get_msg_template("window-rules/list-views"))
+        list_views = self.send_json(get_msg_template("window-rules/list-views"))
+        clean_list = []
+        for view in list_views:
+            if view["role"] == "desktop-environment":
+                continue
+            if view["app-id"] == "nil":
+                continue
+            if view["mapped"] is False:
+                continue
+            if view["pid"] == -1:
+                continue
+
+            clean_list.append(view)
+        return clean_list
+
+    def list_pids(self):
+        list_views = self.list_views()
+        list_pids = []
+        for view in list_views:
+            list_pids.append(view["pid"])
+        return list_pids
 
     def configure_view(self, view_id: int, x: int, y: int, w: int, h: int):
         message = get_msg_template("window-rules/configure-view")
@@ -94,17 +121,18 @@ class WayfireSocket:
         return [i for i in self.list_views() if i["id"] == id][0]
 
     def get_focused_view_pid(self):
-        view_id = self.get_focused_view()["id"]
-        return self.get_view_pid(view_id)
+        view = self.get_focused_view()
+        if view is not None:
+            view_id = self.get_focused_view()
+            if view_id is not None:
+                view_id = view_id["id"]
+                return self.get_view_pid(view_id)
 
     def is_focused_view_fullscreen(self):
         return self.get_focused_view()["fullscreen"]
 
     def get_focused_view_role(self):
         return self.get_focused_view_info()["role"]
-
-    def get_focused_view_tiled(self):
-        return self.get_focused_view()["tiled"]
 
     def get_focused_view_bbox(self):
         return self.get_focused_view()["bbox"]
@@ -116,10 +144,19 @@ class WayfireSocket:
         return self.get_focused_view()["id"]
 
     def get_focused_view_output(self):
-        return self.get_focused_view()["output"]
+        return self.get_focused_view()["output-id"]
 
     def get_focused_view_title(self):
-        return self.get_focused_view()["title"]
+        # the issue here is that if you get focused data directly
+        # sometimes it will get stuff from different roles like desktop-environment
+        # list-view will just filter all those stuff
+        view_id = self.get_focused_view()["id"]
+        list_view = self.list_views()
+        title = [view["title"] for view in list_view if view_id == view["id"]]
+        if title:
+            return title[0]
+        else:
+            return ""
 
     def get_focused_view_type(self):
         return self.get_focused_view()["type"]
@@ -129,7 +166,7 @@ class WayfireSocket:
 
     def get_focused_output(self):
         focused_view = self.get_focused_view()
-        output_id = focused_view["output"]
+        output_id = focused_view["output-id"]
         return self.query_output(output_id)
 
     def coordinates_to_number(self, rows, cols, coordinates):
@@ -186,9 +223,10 @@ class WayfireSocket:
         return self.send_json(message)
 
     def get_view_pid(self, view_id):
-        message = get_msg_template("window-rules/get-view-pid")
-        message["data"]["id"] = view_id
-        return self.send_json(message)["pid"]
+        view = self.get_view(view_id)
+        if view is not None:
+            pid = view["pid"]
+            return pid
 
     def get_view(self, view_id):
         message = get_msg_template("window-rules/view-info")
@@ -204,6 +242,7 @@ class WayfireSocket:
             next = current_workspace + 1
 
         self.set_workspace(next)
+        return True
 
     def go_previous_workspace(self):
         previous = 1
@@ -214,6 +253,12 @@ class WayfireSocket:
             previous = current_workspace - 1
 
         self.set_workspace(previous)
+        return True
+
+    def get_workspaces_with_views(self):
+        list_views = self.list_views()
+        for view in list_views:
+            print(view)
 
     def get_view_info(self, view_id):
         info = [i for i in self.list_views() if i["id"] == view_id]
@@ -238,7 +283,7 @@ class WayfireSocket:
         return self.get_view(view_id)["minimized"]
 
     def get_view_tiled_edges(self, view_id):
-        return self.get_view(view_id)["tiled_edges"]
+        return self.get_view(view_id)["tiled-edges"]
 
     def get_view_title(self, view_id):
         return self.get_view(view_id)["title"]
@@ -281,7 +326,7 @@ class WayfireSocket:
         workspaces_coordinates = self.total_workspaces()
         y, x = workspaces_coordinates[workspace_number]
         focused_view = self.get_focused_view()
-        output_id = focused_view["output"]
+        output_id = focused_view["output-id"]
         message = get_msg_template("vswitch/set-workspace")
         message["data"]["x"] = x
         message["data"]["y"] = y
@@ -289,6 +334,7 @@ class WayfireSocket:
         if view_id is not None:
             message["data"]["view-id"] = view_id
         self.send_json(message)
+        return True
 
     def configure_input_device(self, id, enabled: bool):
         message = get_msg_template("input/configure-device")

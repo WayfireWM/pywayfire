@@ -1,6 +1,7 @@
 README.md
 pyproject.toml
 waypy.py
+tests/test_waypy.py
 waypy.egg-info/PKG-INFO
 waypy.egg-info/SOURCES.txt
 waypy.egg-info/dependency_links.txt
