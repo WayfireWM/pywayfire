@@ -1,7 +1,0 @@
-{
-  "name": "waypy Workflow",
-  "description": "waypy starter workflow.",
-  "iconName": "example-icon",
-  "categories": ["Python"],
-  "filePatterns": ["package.py$", ".*\\.md$"]
-}
