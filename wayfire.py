@@ -90,6 +90,14 @@ class WayfireSocket:
             clean_list.append(view)
         return clean_list
 
+    def focused_output_views(self):
+        list_views = self.list_views()
+        focused_output = self.get_focused_output()
+        output_views = [
+            view for view in list_views if view["output-id"] == focused_output["id"]
+        ]
+        return output_views
+
     def list_pids(self):
         list_views = self.list_views()
         list_pids = []
@@ -185,6 +193,9 @@ class WayfireSocket:
         focused_output = self.get_focused_output()
         x = focused_output["workspace"]["x"]
         y = focused_output["workspace"]["y"]
+        return self.get_workspace_number(x, y)
+
+    def get_workspace_number(self, x, y):
         workspaces_coordinates = self.total_workspaces()
         coordinates_to_find = [
             i for i in workspaces_coordinates.values() if [y, x] == i
@@ -239,15 +250,50 @@ class WayfireSocket:
         return self.send_json(message)["info"]
 
     def go_next_workspace(self):
-        next = 1
+        next = 0
         current_workspace = self.get_active_workspace_number()
-        if current_workspace == 9:
+        if current_workspace == 2:
             next = 1
         else:
-            next = current_workspace + 1
+            next = 2
 
         self.set_workspace(next)
         return True
+
+    def iterate_dicts(self, dicts):
+        index = 0
+        length = len(dicts)
+        while True:
+            yield dicts[index]
+            index = (index + 1) % length
+
+    def get_next_workspace(self, workspaces, active_workspace):
+        # Find the index of the active workspace in the list
+        active_index = None
+        for i, workspace in enumerate(workspaces):
+            if workspace == active_workspace:
+                active_index = i
+                break
+
+        if active_index is None:
+            raise ValueError("Active workspace not found in the list of workspaces.")
+
+        # Calculate the index of the next workspace cyclically
+        next_index = (active_index + 1) % len(workspaces)
+
+        # Sort the list based on the 'x' and 'y' keys
+        workspaces.sort(key=lambda d: (d["x"], d["y"]))
+
+        # Return the next workspace
+        #
+        return workspaces[next_index]
+
+    def go_next_workspace_with_views(self):
+        workspaces = self.get_workspaces_with_views()
+        active_workspace = self.get_focused_output()["workspace"]
+        active_workspace = {"x": active_workspace["x"], "y": active_workspace["y"]}
+        next_ws = self.get_next_workspace(workspaces, active_workspace)
+        self.set_workspace(next_ws)
 
     def go_previous_workspace(self):
         previous = 1
@@ -329,31 +375,67 @@ class WayfireSocket:
         return workspaces
 
     def get_workspaces_with_views(self):
-        winfo = self.get_active_workspace_info()
-        total_workspaces = winfo["grid_height"] * winfo["grid_width"]
+        focused_output = self.get_focused_output()
+        ws = self.get_active_workspace_info()
+        monitor = focused_output["geometry"]
+        monitor_h = monitor["height"]
+        monitor_w = monitor["width"]
+        ws_with_views = []
+        for view in self.focused_output_views():
+            x = view["geometry"]["x"]
+            y = view["geometry"]["y"]
 
-        # Calculate the number of rows and columns based on the total number of workspaces
-        rows = int(total_workspaces**0.5)
-        cols = (total_workspaces + rows - 1) // rows
+            pos_x, pos_y = ws["x"], ws["y"]
+            ws_rectangle_x, ws_rectangle_y = 0, 0
 
-        # Initialize the dictionary to store workspace numbers and their coordinates
-        workspaces = {}
+            if x == 0:
+                pos_x = ws["x"]
 
-        # Loop through each row and column to assign workspace numbers and coordinates
-        for row in range(rows):
-            for col in range(cols):
-                workspace_num = row * cols + col + 1
-                if workspace_num <= total_workspaces:
-                    # Check if both width and height are greater than 0
-                    if winfo["grid_width"] > 0 and winfo["grid_height"] > 0:
-                        workspaces[workspace_num] = [row, col]
-        return workspaces
+            else:
+                ws_rectangle_x = round((1 + ws["x"]) * monitor_w)
+                pos_x = sorted([ws_rectangle_x, x])
+                pos_x.reverse()
+                pos_x = round(pos_x[0] / pos_x[1])
+                if ws["x"] < 0 and abs(ws["x"]) == monitor_w:
+                    pos_x = 0
+                if pos_x < monitor_w and pos_x > 2:
+                    pos_x = ws["x"]
+                if pos_x <= 0:
+                    pos_x = abs(pos_x + ws["x"])
+
+            if y == 0:
+                pos_y = ws["y"]
+            else:
+                ws_rectangle_y = round((1 + ws["y"]) * monitor_h)
+                pos_y = sorted([ws_rectangle_y, y])
+                pos_y.reverse()
+                pos_y = round(pos_y[0] / pos_y[1])
+                if ws["y"] < 0 and abs(ws["y"]) == monitor_h:
+                    pos_x = 0
+                if pos_y < monitor_h and pos_y > 2:
+                    pos_y = ws["y"]
+                if pos_y <= 0:
+                    pos_y = abs(pos_y + ws["y"])
+
+            # if the view is the focused window we already have the coordinates
+            if self.get_focused_view()["id"] == view["id"]:
+                pos_x = ws["x"]
+                pos_y = ws["y"]
+
+            if x < 0:
+                pos_x = 0
+            if y < 0:
+                pos_y = 0
+            ws_v = {"x": pos_x, "y": pos_y}
+            if ws_v not in ws_with_views:
+                ws_with_views.append(ws_v)
+        return ws_with_views
 
     def set_workspace(self, workspace_number, view_id=None):
         workspaces_coordinates = self.total_workspaces()
         y, x = workspaces_coordinates[workspace_number]
-        focused_view = self.get_focused_view()
-        output_id = focused_view["output-id"]
+        focused_output = self.get_focused_output()
+        output_id = focused_output["id"]
         message = get_msg_template("vswitch/set-workspace")
         message["data"]["x"] = x
         message["data"]["y"] = y

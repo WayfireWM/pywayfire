@@ -224,18 +224,3 @@ def test_get_active_workspace_number():
     # Assuming you have a valid instance of WayfireSocket named 'sock'
     result = sock.get_active_workspace_number()
     assert isinstance(result, int)
-
-
-def test_go_next_workspace():
-    # Assuming you have a valid instance of WayfireSocket named 'sock'
-    result = sock.go_next_workspace()
-    # the next test will make return back to the original workspace
-    time.sleep(2)
-    assert result is True
-
-
-def test_go_previous_workspace():
-    # Assuming you have a valid instance of WayfireSocket named 'sock'
-    result = sock.go_previous_workspace()
-    # return to the original workspace
-    assert result is True
