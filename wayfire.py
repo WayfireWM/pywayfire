@@ -270,6 +270,10 @@ class WayfireSocket:
     def get_next_workspace(self, workspaces, active_workspace):
         # Find the index of the active workspace in the list
         active_index = None
+
+        # Sort the list based on the 'x' and 'y' keys
+        workspaces.sort(key=lambda d: (d["x"], d["y"]))
+
         for i, workspace in enumerate(workspaces):
             if workspace == active_workspace:
                 active_index = i
@@ -281,11 +285,8 @@ class WayfireSocket:
         # Calculate the index of the next workspace cyclically
         next_index = (active_index + 1) % len(workspaces)
 
-        # Sort the list based on the 'x' and 'y' keys
-        workspaces.sort(key=lambda d: (d["x"], d["y"]))
-
         # Return the next workspace
-        #
+
         return workspaces[next_index]
 
     def go_next_workspace_with_views(self):
@@ -293,6 +294,7 @@ class WayfireSocket:
         active_workspace = self.get_focused_output()["workspace"]
         active_workspace = {"x": active_workspace["x"], "y": active_workspace["y"]}
         next_ws = self.get_next_workspace(workspaces, active_workspace)
+        print(next_ws)
         self.set_workspace(next_ws)
 
     def go_previous_workspace(self):
@@ -431,9 +433,8 @@ class WayfireSocket:
                 ws_with_views.append(ws_v)
         return ws_with_views
 
-    def set_workspace(self, workspace_number, view_id=None):
-        workspaces_coordinates = self.total_workspaces()
-        y, x = workspaces_coordinates[workspace_number]
+    def set_workspace(self, workspace, view_id=None):
+        x, y = workspace["x"], workspace["y"]
         focused_output = self.get_focused_output()
         output_id = focused_output["id"]
         message = get_msg_template("vswitch/set-workspace")
