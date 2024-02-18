@@ -1,5 +1,6 @@
 import socket
 import json as js
+import os
 
 
 def get_msg_template(method: str):
@@ -22,7 +23,25 @@ def geometry_to_json(x: int, y: int, w: int, h: int):
 class WayfireSocket:
     def __init__(self, socket_name):
         self.client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.client.connect(socket_name)
+
+        # if socket_name is empity, we need a workaround to set it
+        # that happens when the compositor has no views in the workspace
+        # so WAYFIRE_SOCKET env is not set
+        if socket_name is None:
+            # the last item is the most recent socket file
+            socket_list = sorted(
+                [
+                    os.path.join("/tmp", i)
+                    for i in os.listdir("/tmp")
+                    if "wayfire-wayland" in i
+                ]
+            )
+            for sock in socket_list:
+                try:
+                    self.client.connect(sock)
+                    break
+                except:
+                    pass
 
     def read_exact(self, n):
         response = bytes()
@@ -352,10 +371,15 @@ class WayfireSocket:
         return self.get_view_info(view_id)["layer"]
 
     def maximize_focused(self):
-        self.assign_slot(self.get_focused_view(), "slot_c")
+        view = self.get_focused_view()
+        self.assign_slot(view["id"], "slot_c")
+
+    def toggle_expo(self):
+        message = get_msg_template("expo/toggle")
+        self.send_json(message)
 
     def maximize(self, view_id):
-        self.assign_slot(view_id, "slot_c")
+        return self.assign_slot(view_id, "slot_c")
 
     def total_workspaces(self):
         winfo = self.get_active_workspace_info()
