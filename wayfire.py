@@ -1,6 +1,7 @@
 import socket
 import json as js
 import os
+from subprocess import call
 
 
 def get_msg_template(method: str):
@@ -42,6 +43,8 @@ class WayfireSocket:
                     break
                 except:
                     pass
+        else:
+            self.client.connect(socket_name)
 
     def read_exact(self, n):
         response = bytes()
@@ -68,6 +71,17 @@ class WayfireSocket:
         self.client.send(header)
         self.client.send(data)
         return self.read_message()
+
+    # this is not a socket IPC thing, but since the compositor developer won't implement
+    # dpms for ipc, this tool just works fine
+    # this was not intended to be here, but anyways, lets use it
+    def dpms(self, state, output_name):
+        if state == "on":
+            call("wlopm --on {}".format(output_name).split())
+        if state == "off":
+            call("wlopm --off {}".format(output_name).split())
+        if state == "toggle":
+            call("wlopm --toggle {}".format(output_name).split())
 
     def close(self):
         self.client.close()
