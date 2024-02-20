@@ -2,6 +2,7 @@ import socket
 import json as js
 import os
 from subprocess import call
+from itertools import cycle
 
 
 def get_msg_template(method: str):
@@ -383,20 +384,9 @@ class WayfireSocket:
         return self.get_view(view_id)["minimized"]
 
     def is_view_maximized(self, view_id):
-        output_id = self.get_view_output_id(view_id)
-        output = self.query_output(output_id)
-        workarea = output["workarea"]
-        width, height = output["geometry"]["width"], output["geometry"]["height"]
         view = self.get_view(view_id)
-        g = view["geometry"]
-        vw = g["width"]
-        vh = g["height"]
-        ow = round(width - workarea["x"])
-        oh = round(height - workarea["y"])
-        if vw == ow and vh == oh:
-            return True
-        else:
-            return False
+        if view["tiled-edges"] == True:
+            view
 
     def get_view_tiled_edges(self, view_id):
         return self.get_view(view_id)["tiled-edges"]
@@ -670,7 +660,9 @@ class WayfireSocket:
             return
 
         index = len(aw) - 1
-        for position in positions:
+        positions_cycle = cycle(positions)
+        while True:
+            position = next(positions_cycle)
             self.tilling_view_position(position, aw[index])
             if index >= 0:
                 index -= 1
