@@ -310,10 +310,24 @@ class WayfireSocket:
         # Find the index of the active workspace in the list
         active_index = None
 
-        # Sort the list based on the 'x' and 'y' keys
-        workspaces.sort(key=lambda d: (d["x"], d["y"]))
+        # Remove the "view-id" key from each workspace
+        for workspace in workspaces:
+            workspace.pop("view-id", None)
 
-        for i, workspace in enumerate(workspaces):
+        # Create a set to store unique workspace dictionaries
+        unique_workspaces = []
+
+        # Filter out duplicates while maintaining the order
+        for workspace in workspaces:
+            if workspace not in unique_workspaces:
+                unique_workspaces.append(workspace)
+
+        # Sort the list based on the 'x' and 'y' keys
+        unique_workspaces.sort(key=lambda d: (d["x"], d["y"]))
+
+        print(unique_workspaces)
+
+        for i, workspace in enumerate(unique_workspaces):
             if workspace == active_workspace:
                 active_index = i
                 break
@@ -322,11 +336,10 @@ class WayfireSocket:
             raise ValueError("Active workspace not found in the list of workspaces.")
 
         # Calculate the index of the next workspace cyclically
-        next_index = (active_index + 1) % len(workspaces)
+        next_index = (active_index + 1) % len(unique_workspaces)
 
         # Return the next workspace
-
-        return workspaces[next_index]
+        return unique_workspaces[next_index]
 
     def go_next_workspace_with_views(self):
         workspaces = self.get_workspaces_with_views()
