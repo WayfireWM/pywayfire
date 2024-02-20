@@ -384,9 +384,20 @@ class WayfireSocket:
         return self.get_view(view_id)["minimized"]
 
     def is_view_maximized(self, view_id):
+        output_id = self.get_view_output_id(view_id)
+        output = self.query_output(output_id)
+        workarea = output["workarea"]
+        width, height = output["geometry"]["width"], output["geometry"]["height"]
         view = self.get_view(view_id)
-        if view["tiled-edges"] == True:
-            view
+        g = view["geometry"]
+        vw = g["width"]
+        vh = g["height"]
+        ow = round(width - workarea["x"])
+        oh = round(height - workarea["y"])
+        if vw == ow and vh == oh:
+            return True
+        else:
+            return False
 
     def get_view_tiled_edges(self, view_id):
         return self.get_view(view_id)["tiled-edges"]
@@ -443,7 +454,41 @@ class WayfireSocket:
                     workspaces[workspace_num] = [row, col]
         return workspaces
 
+    def view_visible_on_workspace(self, view, ws_x, ws_y, monitor):
+        workspace_start_x = ws_x * monitor["width"]
+        workspace_start_y = ws_y * monitor["height"]
+        workspace_end_x = workspace_start_x + monitor["width"]
+        workspace_end_y = workspace_start_y + monitor["height"]
+
+        # Test intersection of two rectangles
+        return not (
+            view["x"] >= workspace_end_x
+            or view["y"] > workspace_end_y
+            or view["x"] + view["width"] <= workspace_start_x
+            or view["y"] + view["height"] <= workspace_start_y
+        )
+
     def get_workspaces_with_views(self):
+        focused_output = self.get_focused_output()
+        monitor = focused_output["geometry"]
+        ws_with_views = []
+
+        views = self.focused_output_views()
+        for ws_x in range(focused_output["workspace"]["grid_width"]):
+            for ws_y in range(focused_output["workspace"]["grid_height"]):
+                for view in views:
+                    if self.view_visible_on_workspace(
+                        view["geometry"],
+                        ws_x - focused_output["workspace"]["x"],
+                        ws_y - focused_output["workspace"]["y"],
+                        monitor,
+                    ):
+                        ws_with_views.append(
+                            {"x": ws_x, "y": ws_y, "view-id": view["id"]}
+                        )
+        return ws_with_views
+
+    def get_workspaces_with_views1(self):
         focused_output = self.get_focused_output()
         ws = self.get_active_workspace_info()
         monitor = focused_output["geometry"]
@@ -535,37 +580,6 @@ class WayfireSocket:
             round(height / 2),
         )
 
-    def set_view_top_right(self, view_id):
-        output_id = self.get_view_output_id(view_id)
-        output = self.query_output(output_id)
-        workarea = output["workarea"]
-        width, height = output["geometry"]["width"], output["geometry"]["height"]
-        width = round(width - workarea["x"])
-        height = round(height - workarea["y"])
-        wa_y = workarea["y"]
-        self.configure_view(
-            view_id,
-            round(width / 2),
-            wa_y,
-            round(width / 2),
-            round(height / 2),
-        )
-
-    def set_view_bottom_left(self, view_id):
-        output_id = self.get_view_output_id(view_id)
-        output = self.query_output(output_id)
-        workarea = output["workarea"]
-        width, height = output["geometry"]["width"], output["geometry"]["height"]
-        wa_x = workarea["x"]
-        wa_y = workarea["y"]
-        self.configure_view(
-            view_id,
-            wa_x,
-            round((height + wa_y) / 2),
-            round((width - wa_x) / 2),
-            round((height - wa_y) / 2),
-        )
-
     def set_view_left(self, view_id):
         output_id = self.get_view_output_id(view_id)
         output = self.query_output(output_id)
@@ -581,6 +595,36 @@ class WayfireSocket:
             wa_y,
             round(width / 2),
             height,
+        )
+
+    def set_view_top_right(self, view_id):
+        output_id = self.get_view_output_id(view_id)
+        output = self.query_output(output_id)
+        workarea = output["workarea"]
+        width, height = output["geometry"]["width"], output["geometry"]["height"]
+        wa_x = workarea["x"]
+        wa_y = workarea["y"]
+        self.configure_view(
+            view_id,
+            round((width + wa_x) / 2),
+            wa_y,
+            round((width - wa_x) / 2),
+            round((height - wa_y) / 2),
+        )
+
+    def set_view_bottom_left(self, view_id):
+        output_id = self.get_view_output_id(view_id)
+        output = self.query_output(output_id)
+        workarea = output["workarea"]
+        width, height = output["geometry"]["width"], output["geometry"]["height"]
+        wa_x = workarea["x"]
+        wa_y = workarea["y"]
+        self.configure_view(
+            view_id,
+            wa_x,
+            round((height + wa_y) / 2),
+            round((width - wa_x) / 2),
+            round((height - wa_y) / 2),
         )
 
     def set_view_right(self, view_id):
