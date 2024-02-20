@@ -629,6 +629,14 @@ class WayfireSocket:
         # layout
         positions = ["top-left", "top-right", "bottom-right", "bottom-left"]
         aw = self.get_views_from_active_workspace()
+        if not aw:
+            return None
+
+        index = len(aw) - 1
+        if len(aw) == 1:
+            self.maximize_focused()
+            return
+
         index = len(aw) - 1
         if len(aw) == 2:
             for pos in ["left", "right"]:
@@ -658,6 +666,10 @@ class WayfireSocket:
                 break
 
     def tilling_toggle(self):
+        aw = self.get_views_from_active_workspace()
+        # no views in the active workspace, no toggle
+        if not aw:
+            return
         focused_id = self.get_focused_view()["id"]
         if self.is_view_maximized(focused_id):
             self.maximize_all_views_from_active_workspace()
