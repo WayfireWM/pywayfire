@@ -376,8 +376,8 @@ class WayfireSocket:
         width, height = output["geometry"]["width"], output["geometry"]["height"]
         view = self.get_view(view_id)
         g = view["geometry"]
-        vw = round(g["width"] - workarea["x"])
-        vh = round(g["height"] - workarea["y"])
+        vw = g["width"]
+        vh = g["height"]
         ow = round(width - workarea["x"])
         oh = round(height - workarea["y"])
         if vw == ow and vh == oh:
@@ -520,8 +520,16 @@ class WayfireSocket:
         output = self.query_output(output_id)
         workarea = output["workarea"]
         width, height = output["geometry"]["width"], output["geometry"]["height"]
+        width = round(width - workarea["x"])
+        height = round(height - workarea["y"])
+        wa_x = workarea["x"]
+        wa_y = workarea["y"]
         self.configure_view(
-            view_id, workarea["x"], workarea["y"], round(width / 2), round(height / 2)
+            view_id,
+            wa_x,
+            wa_y,
+            round(width / 2),
+            round(height / 2),
         )
 
     def set_view_top_right(self, view_id):
@@ -529,12 +537,15 @@ class WayfireSocket:
         output = self.query_output(output_id)
         workarea = output["workarea"]
         width, height = output["geometry"]["width"], output["geometry"]["height"]
+        width = round(width - workarea["x"])
+        height = round(height - workarea["y"])
+        wa_y = workarea["y"]
         self.configure_view(
             view_id,
             round(width / 2),
-            workarea["y"],
+            wa_y,
             round(width / 2),
-            round(round(height / 2) - workarea["y"]),
+            round(height / 2),
         )
 
     def set_view_bottom_left(self, view_id):
@@ -542,12 +553,14 @@ class WayfireSocket:
         output = self.query_output(output_id)
         workarea = output["workarea"]
         width, height = output["geometry"]["width"], output["geometry"]["height"]
+        wa_x = workarea["x"]
+        wa_y = workarea["y"]
         self.configure_view(
             view_id,
-            workarea["x"],
-            round(height / 2),
-            round(width / 2),
-            round(round(height / 2) - workarea["y"]),
+            wa_x,
+            round((height + wa_y) / 2),
+            round((width - wa_x) / 2),
+            round((height - wa_y) / 2),
         )
 
     def set_view_left(self, view_id):
@@ -555,12 +568,16 @@ class WayfireSocket:
         output = self.query_output(output_id)
         workarea = output["workarea"]
         width, height = output["geometry"]["width"], output["geometry"]["height"]
+        width = round(width - workarea["x"])
+        height = round(height - workarea["y"])
+        wa_x = workarea["x"]
+        wa_y = workarea["y"]
         self.configure_view(
             view_id,
-            workarea["x"],
-            workarea["y"],
+            wa_x,
+            wa_y,
             round(width / 2),
-            round(height - workarea["y"]),
+            height,
         )
 
     def set_view_right(self, view_id):
@@ -568,25 +585,30 @@ class WayfireSocket:
         output = self.query_output(output_id)
         workarea = output["workarea"]
         width, height = output["geometry"]["width"], output["geometry"]["height"]
+        width = round(width - workarea["x"])
+        height = round(height - workarea["y"])
+        wa_y = workarea["y"]
         self.configure_view(
             view_id,
-            round(round(width / 2) - workarea["x"]),
-            workarea["y"],
             round(width / 2),
-            round(height - workarea["y"]),
+            wa_y,
+            round(width / 2),
+            height,
         )
 
     def set_view_bottom_right(self, view_id):
         output_id = self.get_view_output_id(view_id)
         output = self.query_output(output_id)
-        workarea = output["workarea"]
         width, height = output["geometry"]["width"], output["geometry"]["height"]
+        workarea = output["workarea"]
+        wa_x = workarea["x"]
+        wa_y = workarea["y"]
         self.configure_view(
             view_id,
-            round(round(width / 2) - workarea["x"]),
-            round(round(height / 2) - workarea["y"]),
-            round(width / 2),
-            round(height / 2),
+            round((width + wa_x) / 2),
+            round((height + wa_y) / 2),
+            round((width - wa_x) / 2),
+            round((height - wa_y) / 2),
         )
 
     def tilling_view_position(self, position, view_id):
@@ -604,11 +626,21 @@ class WayfireSocket:
             self.set_view_right(view_id)
 
     def tilling(self):
+        # layout
         positions = ["top-left", "top-right", "bottom-right", "bottom-left"]
         aw = self.get_views_from_active_workspace()
         index = len(aw) - 1
         if len(aw) == 2:
             for pos in ["left", "right"]:
+                self.tilling_view_position(pos, aw[index])
+                if index >= 0:
+                    index -= 1
+                if index <= -1:
+                    break
+            return
+
+        if len(aw) == 3:
+            for pos in ["left", "top-right", "bottom-right"]:
                 self.tilling_view_position(pos, aw[index])
                 if index >= 0:
                     index -= 1

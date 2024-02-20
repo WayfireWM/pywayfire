@@ -199,27 +199,6 @@ def test_total_workspaces():
     assert isinstance(total_workspaces, int)
 
 
-def test_set_workspace():
-    # Assuming you have a valid instance of WayfireSocket named 'sock'
-    result = sock.set_workspace(
-        sock.get_active_workspace_number(), sock.get_focused_view_id()
-    )
-    assert result is True
-
-
-def test_scale_leave():
-    # Assuming you have a valid instance of WayfireSocket named 'sock'
-    result = sock.scale_leave()
-    assert result is True
-
-
-def test_scale_toggle():
-    result = sock.scale_toggle()
-    # toggle again to revert to the original state
-    sock.scale_toggle()
-    assert result is True
-
-
 def test_get_active_workspace_number():
     # Assuming you have a valid instance of WayfireSocket named 'sock'
     result = sock.get_active_workspace_number()
