@@ -86,6 +86,12 @@ class WayfireSocket:
     def close(self):
         self.client.close()
 
+    def screenshot(self, id, filename):
+        capture = get_msg_template("view-shot/capture")
+        capture["data"]["view-id"] = id
+        capture["data"]["file"] = filename
+        self.send_json(capture)
+
     def watch(self):
         method = "window-rules/events/watch"
         message = get_msg_template(method)
@@ -348,8 +354,8 @@ class WayfireSocket:
         else:
             return
 
-    def get_view_output(self, view_id):
-        return self.get_view(view_id)["output"]
+    def get_view_output_id(self, view_id):
+        return self.get_view(view_id)["output-id"]
 
     def is_view_fullscreen(self, view_id):
         return self.get_view(view_id)["fullscreen"]
@@ -466,10 +472,88 @@ class WayfireSocket:
                 pos_x = 0
             if y < 0:
                 pos_y = 0
-            ws_v = {"x": pos_x, "y": pos_y}
+            ws_v = {"x": pos_x, "y": pos_y, "view-id": view["id"]}
             if ws_v not in ws_with_views:
                 ws_with_views.append(ws_v)
         return ws_with_views
+
+    def get_views_from_active_workspace(self):
+        aw = self.get_active_workspace_info()
+        aw = aw["x"], aw["y"]
+        return [
+            i["view-id"]
+            for i in self.get_workspaces_with_views()
+            if i["x"] == aw[0] and i["y"] == aw[1]
+        ]
+
+    def set_view_top_left(self, view_id):
+        output_id = self.get_view_output_id(view_id)
+        output = self.query_output(output_id)
+        workarea = output["workarea"]
+        width, height = output["geometry"]["width"], output["geometry"]["height"]
+        self.configure_view(
+            view_id, workarea["x"], workarea["y"], round(width / 2), round(height / 2)
+        )
+
+    def set_view_top_right(self, view_id):
+        output_id = self.get_view_output_id(view_id)
+        output = self.query_output(output_id)
+        workarea = output["workarea"]
+        width, height = output["geometry"]["width"], output["geometry"]["height"]
+        self.configure_view(
+            view_id,
+            round(width / 2),
+            workarea["y"],
+            round(width / 2),
+            round(round(height / 2) - workarea["y"]),
+        )
+
+    def set_view_bottom_left(self, view_id):
+        output_id = self.get_view_output_id(view_id)
+        output = self.query_output(output_id)
+        workarea = output["workarea"]
+        width, height = output["geometry"]["width"], output["geometry"]["height"]
+        self.configure_view(
+            view_id,
+            workarea["x"],
+            round(height / 2),
+            round(width / 2),
+            round(round(height / 2) - workarea["y"]),
+        )
+
+    def set_view_bottom_right(self, view_id):
+        output_id = self.get_view_output_id(view_id)
+        output = self.query_output(output_id)
+        workarea = output["workarea"]
+        width, height = output["geometry"]["width"], output["geometry"]["height"]
+        self.configure_view(
+            view_id,
+            round(round(width / 2) - workarea["x"]),
+            round(round(height / 2) - workarea["y"]),
+            round(width / 2),
+            round(height / 2),
+        )
+
+    def tilling_view_position(self, position, view_id):
+        if position == "top-right":
+            self.set_view_top_right(view_id)
+        if position == "top-left":
+            self.set_view_top_left(view_id)
+        if position == "bottom-right":
+            self.set_view_bottom_right(view_id)
+        if position == "bottom-left":
+            self.set_view_bottom_left(view_id)
+
+    def tilling(self):
+        positions = ["top-left", "top-right", "bottom-right", "bottom-left"]
+        aw = self.get_views_from_active_workspace()
+        count = len(aw) - 1
+        for position in positions:
+            self.tilling_view_position(position, aw[count])
+            if count >= 0:
+                count -= 1
+            if count == -1:
+                break
 
     def set_workspace(self, workspace, view_id=None):
         x, y = workspace["x"], workspace["y"]
