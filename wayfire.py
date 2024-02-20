@@ -369,6 +369,22 @@ class WayfireSocket:
     def is_view_minimized(self, view_id):
         return self.get_view(view_id)["minimized"]
 
+    def is_view_maximized(self, view_id):
+        output_id = self.get_view_output_id(view_id)
+        output = self.query_output(output_id)
+        workarea = output["workarea"]
+        width, height = output["geometry"]["width"], output["geometry"]["height"]
+        view = self.get_view(view_id)
+        g = view["geometry"]
+        vw = round(g["width"] - workarea["x"])
+        vh = round(g["height"] - workarea["y"])
+        ow = round(width - workarea["x"])
+        oh = round(height - workarea["y"])
+        if vw == ow and vh == oh:
+            return True
+        else:
+            return False
+
     def get_view_tiled_edges(self, view_id):
         return self.get_view(view_id)["tiled-edges"]
 
@@ -400,6 +416,10 @@ class WayfireSocket:
 
     def maximize(self, view_id):
         return self.assign_slot(view_id, "slot_c")
+
+    def maximize_all_views_from_active_workspace(self):
+        for view_id in self.get_views_from_active_workspace():
+            self.maximize(view_id)
 
     def total_workspaces(self):
         winfo = self.get_active_workspace_info()
@@ -434,11 +454,16 @@ class WayfireSocket:
             pos_x, pos_y = ws["x"], ws["y"]
             ws_rectangle_x, ws_rectangle_y = 0, 0
 
+            view_width_fraction = 1
+            # cannot divide by zero
+            if x != 0:
+                view_width_fraction = round(monitor_w / abs(x))
+
             if x == 0:
                 pos_x = ws["x"]
 
             else:
-                ws_rectangle_x = round((1 + ws["x"]) * monitor_w)
+                ws_rectangle_x = round((view_width_fraction + ws["x"]) * monitor_w)
                 pos_x = sorted([ws_rectangle_x, x])
                 pos_x.reverse()
                 pos_x = round(pos_x[0] / pos_x[1])
@@ -449,10 +474,15 @@ class WayfireSocket:
                 if pos_x <= 0:
                     pos_x = abs(pos_x + ws["x"])
 
+            view_height_fraction = 1
+            # cannot divide by zero
+            if y != 0:
+                view_height_fraction = round(monitor_h / abs(y))
+
             if y == 0:
                 pos_y = ws["y"]
             else:
-                ws_rectangle_y = round((1 + ws["y"]) * monitor_h)
+                ws_rectangle_y = round((view_height_fraction + ws["y"]) * monitor_h)
                 pos_y = sorted([ws_rectangle_y, y])
                 pos_y.reverse()
                 pos_y = round(pos_y[0] / pos_y[1])
@@ -479,11 +509,10 @@ class WayfireSocket:
 
     def get_views_from_active_workspace(self):
         aw = self.get_active_workspace_info()
-        aw = aw["x"], aw["y"]
         return [
             i["view-id"]
             for i in self.get_workspaces_with_views()
-            if i["x"] == aw[0] and i["y"] == aw[1]
+            if i["x"] == aw["x"] and i["y"] == aw["y"]
         ]
 
     def set_view_top_left(self, view_id):
@@ -521,6 +550,32 @@ class WayfireSocket:
             round(round(height / 2) - workarea["y"]),
         )
 
+    def set_view_left(self, view_id):
+        output_id = self.get_view_output_id(view_id)
+        output = self.query_output(output_id)
+        workarea = output["workarea"]
+        width, height = output["geometry"]["width"], output["geometry"]["height"]
+        self.configure_view(
+            view_id,
+            workarea["x"],
+            workarea["y"],
+            round(width / 2),
+            round(height - workarea["y"]),
+        )
+
+    def set_view_right(self, view_id):
+        output_id = self.get_view_output_id(view_id)
+        output = self.query_output(output_id)
+        workarea = output["workarea"]
+        width, height = output["geometry"]["width"], output["geometry"]["height"]
+        self.configure_view(
+            view_id,
+            round(round(width / 2) - workarea["x"]),
+            workarea["y"],
+            round(width / 2),
+            round(height - workarea["y"]),
+        )
+
     def set_view_bottom_right(self, view_id):
         output_id = self.get_view_output_id(view_id)
         output = self.query_output(output_id)
@@ -543,17 +598,40 @@ class WayfireSocket:
             self.set_view_bottom_right(view_id)
         if position == "bottom-left":
             self.set_view_bottom_left(view_id)
+        if position == "left":
+            self.set_view_left(view_id)
+        if position == "right":
+            self.set_view_right(view_id)
 
     def tilling(self):
         positions = ["top-left", "top-right", "bottom-right", "bottom-left"]
         aw = self.get_views_from_active_workspace()
-        count = len(aw) - 1
+        index = len(aw) - 1
+        if len(aw) == 2:
+            for pos in ["left", "right"]:
+                self.tilling_view_position(pos, aw[index])
+                if index >= 0:
+                    index -= 1
+                if index <= -1:
+                    break
+            return
+
+        index = len(aw) - 1
         for position in positions:
-            self.tilling_view_position(position, aw[count])
-            if count >= 0:
-                count -= 1
-            if count == -1:
+            self.tilling_view_position(position, aw[index])
+            if index >= 0:
+                index -= 1
+            # just in case there is a bug that it countinues bellow -1
+            if index <= -1:
                 break
+
+    def tilling_toggle(self):
+        focused_id = self.get_focused_view()["id"]
+        if self.is_view_maximized(focused_id):
+            self.maximize_all_views_from_active_workspace()
+            self.tilling()
+        else:
+            self.maximize_all_views_from_active_workspace()
 
     def set_workspace(self, workspace, view_id=None):
         x, y = workspace["x"], workspace["y"]
