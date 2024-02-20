@@ -387,14 +387,27 @@ class WayfireSocket:
         output_id = self.get_view_output_id(view_id)
         output = self.query_output(output_id)
         workarea = output["workarea"]
-        width, height = output["geometry"]["width"], output["geometry"]["height"]
-        view = self.get_view(view_id)
-        g = view["geometry"]
+        g = self.get_view(view_id)["geometry"]
         vw = g["width"]
         vh = g["height"]
-        ow = round(width - workarea["x"])
-        oh = round(height - workarea["y"])
-        if vw == ow and vh == oh:
+        workarea = output["workarea"]
+        wa_w = workarea["width"]
+        wa_h = workarea["height"]
+        if wa_w == vw and wa_h == vh:
+            return True
+        else:
+            return False
+
+    def is_view_size_greater_than_half_workarea(self, view_id):
+        output_id = self.get_view_output_id(view_id)
+        output = self.query_output(output_id)
+        workarea = output["workarea"]
+        wa_w = workarea["width"]
+        wa_h = workarea["height"]
+        view = self.get_view(view_id)
+        vw = view["geometry"]["width"]
+        vh = view["geometry"]["height"]
+        if vw > (wa_w / 2) and vh > (wa_h / 2):
             return True
         else:
             return False
@@ -580,82 +593,84 @@ class WayfireSocket:
             round(height / 2),
         )
 
-    def set_view_left(self, view_id):
-        output_id = self.get_view_output_id(view_id)
-        output = self.query_output(output_id)
-        workarea = output["workarea"]
-        width, height = output["geometry"]["width"], output["geometry"]["height"]
-        width = round(width - workarea["x"])
-        height = round(height - workarea["y"])
-        wa_x = workarea["x"]
-        wa_y = workarea["y"]
-        self.configure_view(
-            view_id,
-            wa_x,
-            wa_y,
-            round(width / 2),
-            height,
-        )
-
     def set_view_top_right(self, view_id):
         output_id = self.get_view_output_id(view_id)
         output = self.query_output(output_id)
         workarea = output["workarea"]
-        width, height = output["geometry"]["width"], output["geometry"]["height"]
+        wa_w = workarea["width"]
+        wa_h = workarea["height"]
         wa_x = workarea["x"]
         wa_y = workarea["y"]
         self.configure_view(
             view_id,
-            round((width + wa_x) / 2),
+            round(wa_w / 2) + wa_x,
             wa_y,
-            round((width - wa_x) / 2),
-            round((height - wa_y) / 2),
+            round(wa_w / 2),
+            round(wa_h / 2),
         )
 
     def set_view_bottom_left(self, view_id):
         output_id = self.get_view_output_id(view_id)
         output = self.query_output(output_id)
         workarea = output["workarea"]
-        width, height = output["geometry"]["width"], output["geometry"]["height"]
+        wa_w = workarea["width"]
+        wa_h = workarea["height"]
         wa_x = workarea["x"]
         wa_y = workarea["y"]
         self.configure_view(
             view_id,
             wa_x,
-            round((height + wa_y) / 2),
-            round((width - wa_x) / 2),
-            round((height - wa_y) / 2),
+            round(wa_h / 2) + wa_y,
+            round(wa_w / 2),
+            round(wa_h / 2),
         )
 
     def set_view_right(self, view_id):
         output_id = self.get_view_output_id(view_id)
         output = self.query_output(output_id)
         workarea = output["workarea"]
-        width, height = output["geometry"]["width"], output["geometry"]["height"]
-        width = round(width - workarea["x"])
-        height = round(height - workarea["y"])
+        wa_w = workarea["width"]
+        wa_h = workarea["height"]
+        wa_x = workarea["x"]
         wa_y = workarea["y"]
         self.configure_view(
             view_id,
-            round(width / 2),
+            round(wa_w / 2) + wa_x,
             wa_y,
-            round(width / 2),
-            height,
+            round(wa_w / 2),
+            wa_h,
+        )
+
+    def set_view_left(self, view_id):
+        output_id = self.get_view_output_id(view_id)
+        output = self.query_output(output_id)
+        workarea = output["workarea"]
+        wa_w = workarea["width"]
+        wa_h = workarea["height"]
+        wa_x = workarea["x"]
+        wa_y = workarea["y"]
+        self.configure_view(
+            view_id,
+            wa_x,
+            wa_y,
+            round(wa_w / 2),
+            wa_h,
         )
 
     def set_view_bottom_right(self, view_id):
         output_id = self.get_view_output_id(view_id)
         output = self.query_output(output_id)
-        width, height = output["geometry"]["width"], output["geometry"]["height"]
         workarea = output["workarea"]
+        wa_w = workarea["width"]
+        wa_h = workarea["height"]
         wa_x = workarea["x"]
         wa_y = workarea["y"]
         self.configure_view(
             view_id,
-            round((width + wa_x) / 2),
-            round((height + wa_y) / 2),
-            round((width - wa_x) / 2),
-            round((height - wa_y) / 2),
+            round(wa_w / 2) + wa_x,
+            round(wa_h / 2) + wa_y,
+            round(wa_w / 2),
+            round(wa_h / 2),
         )
 
     def tilling_view_position(self, position, view_id):
@@ -720,7 +735,7 @@ class WayfireSocket:
         if not aw:
             return
         focused_id = self.get_focused_view()["id"]
-        if self.is_view_maximized(focused_id):
+        if self.is_view_size_greater_than_half_workarea(focused_id):
             self.maximize_all_views_from_active_workspace()
             self.tilling()
         else:
