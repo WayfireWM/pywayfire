@@ -442,7 +442,22 @@ class WayfireSocket:
         self.send_json(message)
 
     def maximize(self, view_id):
-        return self.assign_slot(view_id, "slot_c")
+        self.assign_slot(view_id, "slot_c")
+        output_id = self.get_view_output_id(view_id)
+        output = self.query_output(output_id)
+        workarea = output["workarea"]
+        wa_w = workarea["width"]
+        wa_h = workarea["height"]
+        wa_x = workarea["x"]
+        wa_y = workarea["y"]
+        gaps = 8
+        self.configure_view(
+            view_id,
+            wa_x + gaps,
+            wa_y + gaps,
+            wa_w - gaps * 2,
+            wa_h - gaps * 2,
+        )
 
     def maximize_all_views_from_active_workspace(self):
         for view_id in self.get_views_from_active_workspace():
@@ -617,12 +632,13 @@ class WayfireSocket:
         wa_h = workarea["height"]
         wa_x = workarea["x"]
         wa_y = workarea["y"]
+        gaps = 2
         self.configure_view(
             view_id,
-            wa_x,
-            round(wa_h / 2) + wa_y,
-            round(wa_w / 2),
-            round(wa_h / 2),
+            wa_x + gaps,
+            round(wa_h / 2) + wa_y + gaps,
+            round(wa_w / 2) - gaps,
+            round(wa_h / 2) - gaps,
         )
 
     def set_view_right(self, view_id):
@@ -633,12 +649,13 @@ class WayfireSocket:
         wa_h = workarea["height"]
         wa_x = workarea["x"]
         wa_y = workarea["y"]
+        gaps = 2
         self.configure_view(
             view_id,
-            round(wa_w / 2) + wa_x,
-            wa_y,
-            round(wa_w / 2),
-            wa_h,
+            round(wa_w / 2) + wa_x + gaps,
+            wa_y + gaps,
+            round(wa_w / 2) - gaps,
+            wa_h - gaps,
         )
 
     def set_view_left(self, view_id):
@@ -649,12 +666,13 @@ class WayfireSocket:
         wa_h = workarea["height"]
         wa_x = workarea["x"]
         wa_y = workarea["y"]
+        gaps = 2
         self.configure_view(
             view_id,
-            wa_x,
-            wa_y,
-            round(wa_w / 2),
-            wa_h,
+            wa_x + gaps,
+            wa_y + gaps,
+            round(wa_w / 2) - gaps,
+            wa_h - gaps,
         )
 
     def set_view_bottom_right(self, view_id):
@@ -665,10 +683,11 @@ class WayfireSocket:
         wa_h = workarea["height"]
         wa_x = workarea["x"]
         wa_y = workarea["y"]
+        gaps = 2
         self.configure_view(
             view_id,
             round(wa_w / 2) + wa_x,
-            round(wa_h / 2) + wa_y,
+            round(wa_h / 2) + (wa_y - gaps),
             round(wa_w / 2),
             round(wa_h / 2),
         )
@@ -689,7 +708,6 @@ class WayfireSocket:
 
     def tilling(self):
         # layout
-        positions = ["top-left", "top-right", "bottom-right", "bottom-left"]
         aw = self.get_views_from_active_workspace()
         if not aw:
             return None
@@ -709,6 +727,7 @@ class WayfireSocket:
                     break
             return
 
+        index = len(aw) - 1
         if len(aw) == 3:
             for pos in ["left", "top-right", "bottom-right"]:
                 self.tilling_view_position(pos, aw[index])
@@ -719,15 +738,17 @@ class WayfireSocket:
             return
 
         index = len(aw) - 1
+        positions = ["top-left", "top-right", "bottom-right", "bottom-left"]
         positions_cycle = cycle(positions)
         while True:
-            position = next(positions_cycle)
-            self.tilling_view_position(position, aw[index])
-            if index >= 0:
-                index -= 1
             # just in case there is a bug that it countinues bellow -1
             if index <= -1:
                 break
+            position = next(positions_cycle)
+            print(position, aw[index])
+            self.tilling_view_position(position, aw[index])
+            if index >= 0:
+                index -= 1
 
     def tilling_toggle(self):
         aw = self.get_views_from_active_workspace()
