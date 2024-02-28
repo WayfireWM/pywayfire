@@ -3,6 +3,7 @@ import json as js
 import os
 from subprocess import call
 from itertools import cycle
+import dbus
 
 
 def get_msg_template(method: str):
@@ -66,6 +67,9 @@ class WayfireSocket:
             raise Exception(response["error"])
         return response
 
+    def xdg_open(self, path):
+        call("xdg-open {0}".format(path).split())
+
     def send_json(self, msg):
         data = js.dumps(msg).encode("utf8")
         header = len(data).to_bytes(4, byteorder="little")
@@ -87,11 +91,54 @@ class WayfireSocket:
     def close(self):
         self.client.close()
 
+    def response_handler(self, response, result, loop):
+        if response == 0:
+            print(f'screenshot of all outputs: {result.get("uri")}')
+            loop.stop()
+        else:
+            print("fail")
+
+    def screenshot_all_outputs(self):
+        bus = dbus.SessionBus()
+        desktop = bus.get_object(
+            "org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop"
+        )
+        desktop.Screenshot(
+            "Screenshot",
+            {"handle_token": "my_token"},
+            dbus_interface="org.freedesktop.portal.Screenshot",
+        )
+        self.xdg_open("/tmp/out.png")
+
+    def screenshot_focused_monitor(self):
+        output = self.get_focused_output()
+        name = output["name"]
+        output_file = "/tmp/output-{0}.png".format(name)
+        call(["grim", "-o", name, output_file])
+        self.xdg_open(output_file)
+
     def screenshot(self, id, filename):
         capture = get_msg_template("view-shot/capture")
         capture["data"]["view-id"] = id
         capture["data"]["file"] = filename
         self.send_json(capture)
+
+    def move_cursor(self, x: int, y: int):
+        message = get_msg_template("stipc/move_cursor")
+        message["data"]["x"] = x
+        message["data"]["y"] = y
+        return self.send_json(message)
+
+    def click_button(self, btn_with_mod: str, mode: str):
+        """
+        btn_with_mod can be S-BTN_LEFT/BTN_RIGHT/etc. or just BTN_LEFT/...
+        If S-BTN..., then the super modifier will be pressed as well.
+        mode is full, press or release
+        """
+        message = get_msg_template("stipc/feed_button")
+        message["data"]["mode"] = mode
+        message["data"]["combo"] = btn_with_mod
+        return self.send_json(message)
 
     def watch(self):
         method = "window-rules/events/watch"
@@ -102,6 +149,32 @@ class WayfireSocket:
         message = get_msg_template("window-rules/output-info")
         message["data"]["id"] = output_id
         return self.send_json(message)
+
+    def set_key_state(self, key: str, state: bool):
+        message = get_msg_template("stipc/feed_key")
+        message["data"]["key"] = key
+        message["data"]["state"] = state
+        return self.send_json(message)
+
+    def run(self, cmd):
+        message = get_msg_template("stipc/run")
+        message["data"]["cmd"] = cmd
+        return self.send_json(message)
+
+    def press_key(self, key: str):
+        if key[:2] == "S-":
+            self.set_key_state("KEY_LEFTMETA", True)
+            self.set_key_state(key[2:], True)
+            self.set_key_state(key[2:], False)
+            self.set_key_state("KEY_LEFTMETA", False)
+        elif key[:2] == "C-":
+            self.set_key_state("KEY_LEFTCTRL", True)
+            self.set_key_state(key[2:], True)
+            self.set_key_state(key[2:], False)
+            self.set_key_state("KEY_LEFTCTRL", False)
+        else:
+            self.set_key_state(key, True)
+            self.set_key_state(key, False)
 
     def scale_toggle(self):
         message = get_msg_template("scale/toggle")
@@ -361,6 +434,15 @@ class WayfireSocket:
         self.set_workspace(previous)
         return True
 
+    def close_view(self, view_id):
+        message = get_msg_template("window-rules/close-view")
+        message["data"]["id"] = view_id
+        return self.send_json(message)
+
+    def close_focused_view(self):
+        view_id = self.get_focused_view()["id"]
+        self.close_view(view_id)
+
     def get_view_info(self, view_id):
         info = [i for i in self.list_views() if i["id"] == view_id]
         if info:
@@ -516,72 +598,20 @@ class WayfireSocket:
                         )
         return ws_with_views
 
-    def get_workspaces_with_views1(self):
+    def get_workspace_coordinates(self, view_info):
         focused_output = self.get_focused_output()
-        ws = self.get_active_workspace_info()
         monitor = focused_output["geometry"]
-        monitor_h = monitor["height"]
-        monitor_w = monitor["width"]
-        ws_with_views = []
-        for view in self.focused_output_views():
-            x = view["geometry"]["x"]
-            y = view["geometry"]["y"]
-
-            pos_x, pos_y = ws["x"], ws["y"]
-            ws_rectangle_x, ws_rectangle_y = 0, 0
-
-            view_width_fraction = 1
-            # cannot divide by zero
-            if x != 0:
-                view_width_fraction = round(monitor_w / abs(x))
-
-            if x == 0:
-                pos_x = ws["x"]
-
-            else:
-                ws_rectangle_x = round((view_width_fraction + ws["x"]) * monitor_w)
-                pos_x = sorted([ws_rectangle_x, x])
-                pos_x.reverse()
-                pos_x = round(pos_x[0] / pos_x[1])
-                if ws["x"] < 0 and abs(ws["x"]) == monitor_w:
-                    pos_x = 0
-                if pos_x < monitor_w and pos_x > 2:
-                    pos_x = ws["x"]
-                if pos_x <= 0:
-                    pos_x = abs(pos_x + ws["x"])
-
-            view_height_fraction = 1
-            # cannot divide by zero
-            if y != 0:
-                view_height_fraction = round(monitor_h / abs(y))
-
-            if y == 0:
-                pos_y = ws["y"]
-            else:
-                ws_rectangle_y = round((view_height_fraction + ws["y"]) * monitor_h)
-                pos_y = sorted([ws_rectangle_y, y])
-                pos_y.reverse()
-                pos_y = round(pos_y[0] / pos_y[1])
-                if ws["y"] < 0 and abs(ws["y"]) == monitor_h:
-                    pos_x = 0
-                if pos_y < monitor_h and pos_y > 2:
-                    pos_y = ws["y"]
-                if pos_y <= 0:
-                    pos_y = abs(pos_y + ws["y"])
-
-            # if the view is the focused window we already have the coordinates
-            if self.get_focused_view()["id"] == view["id"]:
-                pos_x = ws["x"]
-                pos_y = ws["y"]
-
-            if x < 0:
-                pos_x = 0
-            if y < 0:
-                pos_y = 0
-            ws_v = {"x": pos_x, "y": pos_y, "view-id": view["id"]}
-            if ws_v not in ws_with_views:
-                ws_with_views.append(ws_v)
-        return ws_with_views
+        views = [view_info]
+        for ws_x in range(focused_output["workspace"]["grid_width"]):
+            for ws_y in range(focused_output["workspace"]["grid_height"]):
+                for view in views:
+                    if self.view_visible_on_workspace(
+                        view["geometry"],
+                        ws_x - focused_output["workspace"]["x"],
+                        ws_y - focused_output["workspace"]["y"],
+                        monitor,
+                    ):
+                        return {"x": ws_x, "y": ws_y}
 
     def get_views_from_active_workspace(self):
         aw = self.get_active_workspace_info()
@@ -592,105 +622,31 @@ class WayfireSocket:
         ]
 
     def set_view_top_left(self, view_id):
-        output_id = self.get_view_output_id(view_id)
-        output = self.query_output(output_id)
-        workarea = output["workarea"]
-        width, height = output["geometry"]["width"], output["geometry"]["height"]
-        width = round(width - workarea["x"])
-        height = round(height - workarea["y"])
-        wa_x = workarea["x"]
-        wa_y = workarea["y"]
-        self.configure_view(
-            view_id,
-            wa_x,
-            wa_y,
-            round(width / 2),
-            round(height / 2),
-        )
+        self.assign_slot(view_id, "slot_tl")
 
     def set_view_top_right(self, view_id):
-        output_id = self.get_view_output_id(view_id)
-        output = self.query_output(output_id)
-        workarea = output["workarea"]
-        wa_w = workarea["width"]
-        wa_h = workarea["height"]
-        wa_x = workarea["x"]
-        wa_y = workarea["y"]
-        self.configure_view(
-            view_id,
-            round(wa_w / 2) + wa_x,
-            wa_y,
-            round(wa_w / 2),
-            round(wa_h / 2),
-        )
+        self.assign_slot(view_id, "slot_tr")
 
     def set_view_bottom_left(self, view_id):
-        output_id = self.get_view_output_id(view_id)
-        output = self.query_output(output_id)
-        workarea = output["workarea"]
-        wa_w = workarea["width"]
-        wa_h = workarea["height"]
-        wa_x = workarea["x"]
-        wa_y = workarea["y"]
-        gaps = 2
-        self.configure_view(
-            view_id,
-            wa_x + gaps,
-            round(wa_h / 2) + wa_y + gaps,
-            round(wa_w / 2) - gaps,
-            round(wa_h / 2) - gaps,
-        )
+        self.assign_slot(view_id, "slot_bl")
 
     def set_view_right(self, view_id):
-        output_id = self.get_view_output_id(view_id)
-        output = self.query_output(output_id)
-        workarea = output["workarea"]
-        wa_w = workarea["width"]
-        wa_h = workarea["height"]
-        wa_x = workarea["x"]
-        wa_y = workarea["y"]
-        gaps = 2
-        self.configure_view(
-            view_id,
-            round(wa_w / 2) + wa_x + gaps,
-            wa_y + gaps,
-            round(wa_w / 2) - gaps,
-            wa_h - gaps,
-        )
+        self.assign_slot(view_id, "slot_r")
 
     def set_view_left(self, view_id):
-        output_id = self.get_view_output_id(view_id)
-        output = self.query_output(output_id)
-        workarea = output["workarea"]
-        wa_w = workarea["width"]
-        wa_h = workarea["height"]
-        wa_x = workarea["x"]
-        wa_y = workarea["y"]
-        gaps = 2
-        self.configure_view(
-            view_id,
-            wa_x + gaps,
-            wa_y + gaps,
-            round(wa_w / 2) - gaps,
-            wa_h - gaps,
-        )
+        self.assign_slot(view_id, "slot_l")
+
+    def set_view_bottom(self, view_id):
+        self.assign_slot(view_id, "slot_b")
+
+    def set_view_top(self, view_id):
+        self.assign_slot(view_id, "slot_t")
+
+    def set_view_center(self, view_id):
+        self.assign_slot(view_id, "slot_c")
 
     def set_view_bottom_right(self, view_id):
-        output_id = self.get_view_output_id(view_id)
-        output = self.query_output(output_id)
-        workarea = output["workarea"]
-        wa_w = workarea["width"]
-        wa_h = workarea["height"]
-        wa_x = workarea["x"]
-        wa_y = workarea["y"]
-        gaps = 2
-        self.configure_view(
-            view_id,
-            round(wa_w / 2) + wa_x,
-            round(wa_h / 2) + (wa_y - gaps),
-            round(wa_w / 2),
-            round(wa_h / 2),
-        )
+        self.assign_slot(view_id, "slot_br")
 
     def tilling_view_position(self, position, view_id):
         if position == "top-right":
