@@ -623,6 +623,22 @@ class WayfireSocket:
 
     def set_view_top_left(self, view_id):
         self.assign_slot(view_id, "slot_tl")
+        # output_id = self.get_view_output_id(view_id)
+        # output = self.query_output(output_id)
+        # workarea = output["workarea"]
+        # width, height = output["geometry"]["width"], output["geometry"]["height"]
+        # width = round(width - workarea["x"])
+        # height = round(height - workarea["y"])
+        # wa_x = workarea["x"]
+        # wa_y = workarea["y"]
+        # gaps = 4
+        # self.configure_view(
+        #    view_id,
+        #    wa_x,
+        #    wa_y,
+        #    round(width / 2) - (gaps * 2),
+        #    round(height / 2) - (gaps * 2),
+        # )
 
     def set_view_top_right(self, view_id):
         self.assign_slot(view_id, "slot_tr")
@@ -647,6 +663,144 @@ class WayfireSocket:
 
     def set_view_bottom_right(self, view_id):
         self.assign_slot(view_id, "slot_br")
+
+    def resize_view(self, view_id, width, height, position, switch=False):
+        output_id = self.get_view_output_id(view_id)
+        view = self.get_view(view_id)
+        output = self.query_output(output_id)
+        output_width = output["geometry"]["width"]
+        output_height = output["geometry"]["height"]
+        workarea = output["workarea"]
+        wa_x = workarea["x"]
+        wa_y = workarea["y"]
+        wa_w = workarea["width"]
+        wa_h = workarea["height"]
+        vx = view["geometry"]["x"]
+        vy = view["geometry"]["y"]
+        vw = view["geometry"]["width"]
+        vh = view["geometry"]["height"]
+        # don't resize if the view is taking the whole x or y workarea
+        if vw == output_width - wa_x and switch is False:
+            # if view covers whole workarea width disallow for left and right
+            if position == "left" or position == "right":
+                return
+        if vh == output_height - wa_y and switch is False:
+            # if view covers whole workarea height disallow for up and down
+            if position == "up" or position == "down":
+                return
+
+        if position == "left":
+            # size limit for resize views
+            if width < 500 or width > (wa_w - 500):
+                return
+            vx = wa_x
+
+        if position == "right":
+            # size limit for resize views
+            if width < 500 or width > (wa_w - 500):
+                return
+            vx = (output_width - wa_x) - width
+
+        if position == "up":
+            # size limit for resize views
+            if height < 200 or height > (wa_h - 200):
+                return
+            vy = wa_y
+
+        if position == "down":
+            # size limit for resize views
+            if height < 200 or height > (wa_h - 200):
+                return
+            vy = output_height - height
+
+        self.configure_view(
+            view_id,
+            vx,
+            vy,
+            width,
+            height,
+        )
+
+    def resize_views_left(self):
+        views = self.get_views_from_active_workspace()
+        views = [view for view in self.list_views() if view["id"] in views]
+        step_size = 40
+        for view in views:
+            x = view["geometry"]["x"]
+            width = view["geometry"]["width"]
+            height = view["geometry"]["height"]
+            view_id = view["id"]
+            if x < 100:
+                width = width - step_size
+                self.resize_view(view_id, width, height, "left")
+            else:
+                width = width + step_size
+                self.resize_view(view_id, width, height, "right")
+
+    def resize_views_right(self):
+        views = self.get_views_from_active_workspace()
+        views = [view for view in self.list_views() if view["id"] in views]
+        step_size = 40
+        for view in views:
+            x = view["geometry"]["x"]
+            width = view["geometry"]["width"]
+            height = view["geometry"]["height"]
+            view_id = view["id"]
+            if x < 100:
+                width = width + step_size
+                self.resize_view(view_id, width, height, "left")
+            else:
+                width = width - step_size
+                self.resize_view(view_id, width, height, "right")
+
+    def resize_views_up(self):
+        views = self.get_views_from_active_workspace()
+        views = [view for view in self.list_views() if view["id"] in views]
+        step_size = 40
+        for view in views:
+            y = view["geometry"]["y"]
+            width = view["geometry"]["width"]
+            height = view["geometry"]["height"]
+            view_id = view["id"]
+            # top
+            if y < 100:
+                height = height - step_size
+                self.resize_view(view_id, width, height, "up")
+            # bottom
+            else:
+                height = height + step_size
+                self.resize_view(view_id, width, height, "down")
+
+    def resize_views_down(self):
+        views = self.get_views_from_active_workspace()
+        views = [view for view in self.list_views() if view["id"] in views]
+        step_size = 40
+        for view in views:
+            y = view["geometry"]["y"]
+            width = view["geometry"]["width"]
+            height = view["geometry"]["height"]
+            view_id = view["id"]
+            # top
+            if y < 100:
+                height = height + step_size
+                self.resize_view(view_id, width, height, "up")
+            # bottom
+            else:
+                height = height - step_size
+                self.resize_view(view_id, width, height, "down")
+
+    def switch_views_side(self):
+        views = self.get_views_from_active_workspace()
+        views = [view for view in self.list_views() if view["id"] in views]
+        for view in views:
+            x = view["geometry"]["x"]
+            width = view["geometry"]["width"]
+            height = view["geometry"]["height"]
+            view_id = view["id"]
+            if x < 100:
+                self.resize_view(view_id, width, height, "right", switch=True)
+            else:
+                self.resize_view(view_id, width, height, "left", switch=True)
 
     def tilling_view_position(self, position, view_id):
         if position == "top-right":
