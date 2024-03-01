@@ -150,6 +150,14 @@ class WayfireSocket:
         message["data"]["id"] = output_id
         return self.send_json(message)
 
+    def list_outputs(self):
+        message = get_msg_template("window-rules/list-outputs")
+        return self.send_json(message)
+
+    def list_wsets(self):
+        message = get_msg_template("window-rules/list-wsets")
+        return self.send_json(message)
+
     def set_key_state(self, key: str, state: bool):
         message = get_msg_template("stipc/feed_key")
         message["data"]["key"] = key
@@ -175,6 +183,28 @@ class WayfireSocket:
         else:
             self.set_key_state(key, True)
             self.set_key_state(key, False)
+
+    def toggle_showdesktop(self):
+        message = get_msg_template("wm-actions/toggle_showdesktop")
+        return self.send_json(message)
+
+    def set_sticky(self, view_id, state):
+        message = get_msg_template("wm-actions/set-sticky")
+        message["data"]["view_id"] = view_id
+        message["data"]["state"] = state
+        return self.send_json(message)
+
+    def send_to_back(self, view_id, state):
+        message = get_msg_template("wm-actions/send-to-back")
+        message["data"]["view_id"] = view_id
+        message["data"]["state"] = state
+        return self.send_json(message)
+
+    def set_minimized(self, view_id, state):
+        message = get_msg_template("wm-actions/set-minimized")
+        message["data"]["view_id"] = view_id
+        message["data"]["state"] = state
+        return self.send_json(message)
 
     def scale_toggle(self):
         message = get_msg_template("scale/toggle")
@@ -334,7 +364,7 @@ class WayfireSocket:
     def get_focused_output_workarea(self):
         return self.get_focused_output()["workarea"]
 
-    def set_always_on_top(self, view_id: int, always_on_top: bool):
+    def set_view_always_on_top(self, view_id: int, always_on_top: bool):
         message = get_msg_template("wm-actions/set-always-on-top")
         message["data"]["view_id"] = view_id
         message["data"]["state"] = always_on_top
@@ -466,16 +496,7 @@ class WayfireSocket:
         return self.get_view(view_id)["minimized"]
 
     def is_view_maximized(self, view_id):
-        output_id = self.get_view_output_id(view_id)
-        output = self.query_output(output_id)
-        workarea = output["workarea"]
-        g = self.get_view(view_id)["geometry"]
-        vw = g["width"]
-        vh = g["height"]
-        workarea = output["workarea"]
-        wa_w = workarea["width"]
-        wa_h = workarea["height"]
-        if wa_w == vw and wa_h == vh:
+        if self.get_view_tiled_edges(view_id) == 15:
             return True
         else:
             return False
@@ -518,6 +539,17 @@ class WayfireSocket:
     def maximize_focused(self):
         view = self.get_focused_view()
         self.assign_slot(view["id"], "slot_c")
+
+    def fullscreen_focused(self):
+        view = self.get_focused_view()
+        self.set_fullscreen(view["id"])
+
+    def set_fullscreen(self, view_id):
+        message = get_msg_template("wm-actions/set-fullscreen")
+        print(message)
+        message["data"]["view_id"] = view_id
+        message["data"]["state"] = True
+        self.send_json(message)
 
     def toggle_expo(self):
         message = get_msg_template("expo/toggle")
@@ -623,22 +655,6 @@ class WayfireSocket:
 
     def set_view_top_left(self, view_id):
         self.assign_slot(view_id, "slot_tl")
-        # output_id = self.get_view_output_id(view_id)
-        # output = self.query_output(output_id)
-        # workarea = output["workarea"]
-        # width, height = output["geometry"]["width"], output["geometry"]["height"]
-        # width = round(width - workarea["x"])
-        # height = round(height - workarea["y"])
-        # wa_x = workarea["x"]
-        # wa_y = workarea["y"]
-        # gaps = 4
-        # self.configure_view(
-        #    view_id,
-        #    wa_x,
-        #    wa_y,
-        #    round(width / 2) - (gaps * 2),
-        #    round(height / 2) - (gaps * 2),
-        # )
 
     def set_view_top_right(self, view_id):
         self.assign_slot(view_id, "slot_tr")
@@ -865,9 +881,8 @@ class WayfireSocket:
         # no views in the active workspace, no toggle
         if not aw:
             return
-        focused_id = self.get_focused_view()["id"]
-        if self.is_view_size_greater_than_half_workarea(focused_id):
-            self.maximize_all_views_from_active_workspace()
+        view_id = self.get_focused_view()["id"]
+        if self.is_view_maximized(view_id):
             self.tilling()
         else:
             self.maximize_all_views_from_active_workspace()
