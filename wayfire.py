@@ -80,7 +80,15 @@ class WayfireSocket:
     # this is not a socket IPC thing, but since the compositor developer won't implement
     # dpms for ipc, this tool just works fine
     # this was not intended to be here, but anyways, lets use it
-    def dpms(self, state, output_name):
+    def dpms(self, state, output_name=None):
+        if state == "off" and output_name == None:
+            outputs = [output["name"] for output in self.list_outputs()]
+            for output in outputs:
+                call("wlopm --off {}".format(output).split())
+        if state == "on" and output_name == None:
+            outputs = [output["name"] for output in self.list_outputs()]
+            for output in outputs:
+                call("wlopm --on {}".format(output).split())
         if state == "on":
             call("wlopm --on {}".format(output_name).split())
         if state == "off":
@@ -115,7 +123,6 @@ class WayfireSocket:
         name = output["name"]
         output_file = "/tmp/output-{0}.png".format(name)
         call(["grim", "-o", name, output_file])
-        self.xdg_open(output_file)
 
     def screenshot(self, id, filename):
         capture = get_msg_template("view-shot/capture")
