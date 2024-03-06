@@ -564,25 +564,27 @@ class WayfireSocket:
 
     def maximize(self, view_id):
         self.assign_slot(view_id, "slot_c")
-        output_id = self.get_view_output_id(view_id)
-        output = self.query_output(output_id)
-        workarea = output["workarea"]
-        wa_w = workarea["width"]
-        wa_h = workarea["height"]
-        wa_x = workarea["x"]
-        wa_y = workarea["y"]
-        gaps = 8
-        self.configure_view(
-            view_id,
-            wa_x + gaps,
-            wa_y + gaps,
-            wa_w - gaps * 2,
-            wa_h - gaps * 2,
-        )
+        # output_id = self.get_view_output_id(view_id)
+        # output = self.query_output(output_id)
+        # workarea = output["workarea"]
+        # wa_w = workarea["width"]
+        # wa_h = workarea["height"]
+        # wa_x = workarea["x"]
+        # wa_y = workarea["y"]
+        # gaps = 2
+        # self.configure_view(
+        #     view_id,
+        #     wa_x + gaps,
+        #     wa_y + gaps,
+        #     wa_w - gaps * 2,
+        #     wa_h - gaps * 2,
+        # )
+        #
 
     def maximize_all_views_from_active_workspace(self):
         for view_id in self.get_views_from_active_workspace():
-            self.maximize(view_id)
+            if not self.is_view_fullscreen(view_id):
+                self.maximize(view_id)
 
     def total_workspaces(self):
         winfo = self.get_active_workspace_info()
@@ -889,7 +891,7 @@ class WayfireSocket:
         if not aw:
             return
         view_id = self.get_focused_view()["id"]
-        if self.is_view_maximized(view_id):
+        if self.is_view_maximized(view_id) and not self.is_view_fullscreen(view_id):
             self.tilling()
         else:
             self.maximize_all_views_from_active_workspace()
