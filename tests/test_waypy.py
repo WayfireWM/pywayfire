@@ -1,6 +1,6 @@
 import os
 import pytest
-import waypy as ws
+import wayfire as ws
 import time
 
 # Initialize WayfireSocket
