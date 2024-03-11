@@ -4,6 +4,7 @@ import os
 from subprocess import call
 from itertools import cycle
 import dbus
+import configparser
 
 
 def get_msg_template(method: str):
@@ -562,24 +563,47 @@ class WayfireSocket:
         message = get_msg_template("expo/toggle")
         self.send_json(message)
 
+    def reload_plugins(self):
+        filename = os.path.expanduser(os.path.join("~", ".config", "wayfire.ini"))
+
+        config = configparser.ConfigParser()
+        config.read(filename)
+
+        # Comment out the 'plugins' line
+        config["core"]["plugins"] = "# " + config["core"]["plugins"]
+
+        # Save the modified configuration back to the file
+        with open(filename, "w") as configfile:
+            config.write(configfile)
+
+        # Uncomment the 'plugins' line
+        config["core"]["plugins"] = (
+            config["core"]["plugins"][2:]
+            if config["core"]["plugins"].startswith("# ")
+            else config["core"]["plugins"]
+        )
+
+        # Save the modified configuration back to the file
+        with open(filename, "w") as configfile:
+            config.write(configfile)
+
+    def reload_plugin(self, plugin_name):
+        filename = os.path.expanduser(os.path.join("~", ".config", "wayfire.ini"))
+        config = configparser.ConfigParser()
+        config.read(filename)
+        if plugin_name in config["core"]["plugins"]:
+            plugins_list = config["core"]["plugins"].split()
+            plugins_list.remove(plugin_name)
+            config["core"]["plugins"] = " ".join(plugins_list)
+            with open(filename, "w") as configfile:
+                config.write(configfile)
+            plugins_list.append(plugin_name)
+            config["core"]["plugins"] = " ".join(plugins_list)
+            with open(filename, "w") as configfile:
+                config.write(configfile)
+
     def maximize(self, view_id):
         self.assign_slot(view_id, "slot_c")
-        # output_id = self.get_view_output_id(view_id)
-        # output = self.query_output(output_id)
-        # workarea = output["workarea"]
-        # wa_w = workarea["width"]
-        # wa_h = workarea["height"]
-        # wa_x = workarea["x"]
-        # wa_y = workarea["y"]
-        # gaps = 2
-        # self.configure_view(
-        #     view_id,
-        #     wa_x + gaps,
-        #     wa_y + gaps,
-        #     wa_w - gaps * 2,
-        #     wa_h - gaps * 2,
-        # )
-        #
 
     def maximize_all_views_from_active_workspace(self):
         for view_id in self.get_views_from_active_workspace():
