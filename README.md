@@ -1,6 +1,6 @@
-#### Waypy serves as a python library, offering bindings specifically designed to interact with the wayfire compositor.
+Waypy serves as a python library, offering bindings specifically designed to interact with the wayfire compositor.
 
-# edit wayfire.ini and add the required plugins for wayfire module
+####  edit wayfire.ini and add the required plugins for wayfire module
 plugins = stipc, ipc, ipc-rules, view-shot, wsets, place, grid, wm-actions
 
 # install
