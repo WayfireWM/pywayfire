@@ -21,7 +21,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python3 -m pip install pyproject.toml 
+        python3 -m pip install .
 
     - name: Run tests
       run: pytest
