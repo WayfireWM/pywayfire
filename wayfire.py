@@ -563,6 +563,27 @@ class WayfireSocket:
         message = get_msg_template("expo/toggle")
         self.send_json(message)
 
+    def find_device_id(self, name_or_id_or_type):
+        devices = self.list_input_devices()
+        for dev in devices:
+            if (
+                dev["name"] == name_or_id_or_type
+                or str(dev["id"]) == name_or_id_or_type
+                or dev["type"] == name_or_id_or_type
+            ):
+                return dev["id"]
+        return None
+
+    def disable_input_device(self, args):
+        device_id = self.find_device_id(args)
+        msg = self.configure_input_device(device_id, False)
+        print(msg)
+
+    def enable_input_device(self, args):
+        device_id = self.find_device_id(args)
+        msg = self.configure_input_device(device_id, True)
+        print(msg)
+
     def reload_plugins(self):
         filename = os.path.expanduser(os.path.join("~", ".config", "wayfire.ini"))
 
