@@ -14,3 +14,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/killown/waypy"
 Issues = "https://github.com/killown/waypy/issues"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
