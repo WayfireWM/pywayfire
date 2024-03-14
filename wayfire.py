@@ -959,3 +959,7 @@ class WayfireSocket:
         message["data"]["id"] = id
         message["data"]["enabled"] = enabled
         return self.send_json(message)
+
+
+addr = os.getenv("WAYFIRE_SOCKET")
+sock = WayfireSocket(addr)
