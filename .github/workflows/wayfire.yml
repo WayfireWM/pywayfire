@@ -1,27 +1,32 @@
-name: CI
+name: Upload Python Package to PyPI when a Release is Created
 
 on:
-  push:
-    branches:
-      - main
-      - master
+  release:
+    types: [created]
 
 jobs:
-  build:
+  pypi-publish:
+    name: Publish release to PyPI
     runs-on: ubuntu-latest
-
+    environment:
+      name: pypi
+      url: https://pypi.org/p/wayfire
+    permissions:
+      id-token: write
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-
-    - name: Install dependencies
-      run: |
-        sudo apt-get install libdbus-1-dev
-        pip install --upgrade pip
-        pip install -r requirements.txt
-        python3 -m pip install .
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - name: Install dependencies
+        run: |
+          sudo apt-get install libdbus-1-dev
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install setuptools wheel
+      - name: Build package
+        run: |
+          python setup.py sdist bdist_wheel  # Could also be python -m build
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
