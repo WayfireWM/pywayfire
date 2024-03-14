@@ -328,9 +328,10 @@ class WayfireSocket:
     def get_focused_view_app_id(self):
         return self.get_focused_view()["app-id"]
 
-    def get_focused_output(self):
+    def get_focused_output(self, output_id=None):
         focused_view = self.get_focused_view()
-        output_id = focused_view["output-id"]
+        if output_id is None:
+            output_id = focused_view["output-id"]
         return self.query_output(output_id)
 
     def coordinates_to_number(self, rows, cols, coordinates):
@@ -445,7 +446,11 @@ class WayfireSocket:
                 break
 
         if active_index is None:
-            raise ValueError("Active workspace not found in the list of workspaces.")
+            first_workspace = self.get_workspaces_with_views()
+            if first_workspace:
+                first_workspace = first_workspace[0]
+            self.set_workspace(first_workspace)
+            # raise ValueError("Active workspace not found in the list of workspaces.")
 
         # Calculate the index of the next workspace cyclically
         next_index = (active_index + 1) % len(unique_workspaces)
@@ -453,9 +458,9 @@ class WayfireSocket:
         # Return the next workspace
         return unique_workspaces[next_index]
 
-    def go_next_workspace_with_views(self):
+    def go_next_workspace_with_views(self, output_id=None):
         workspaces = self.get_workspaces_with_views()
-        active_workspace = self.get_focused_output()["workspace"]
+        active_workspace = self.get_focused_output(output_id=output_id)["workspace"]
         active_workspace = {"x": active_workspace["x"], "y": active_workspace["y"]}
         next_ws = self.get_next_workspace(workspaces, active_workspace)
         self.set_workspace(next_ws)
