@@ -42,7 +42,7 @@ jobs:
         run: ls -la
 
       - name: Debug info
-        run: echo "Current directory: $(pwd)"
+        run: echo $(pwd)
 
       - name: Install build module
         run: python -m pip install -U build
