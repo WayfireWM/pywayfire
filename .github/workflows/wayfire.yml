@@ -21,6 +21,7 @@ jobs:
 
     - name: Install dependencies
       run: |
+        sudo apt-get install libdbus-1-dev
         pip install --upgrade pip
         pip install -r requirements.txt
         python3 -m pip install .
