@@ -40,6 +40,7 @@ jobs:
       # retrieve your distributions here
       - name: Build package
         run: |
+          python3 -m pip install .
           python -m build
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
