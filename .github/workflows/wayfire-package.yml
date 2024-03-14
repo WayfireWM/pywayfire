@@ -38,6 +38,8 @@ jobs:
       id-token: write
     steps:
       # retrieve your distributions here
-
+      - name: Build package
+        run: |
+          python setup.py sdist bdist_wheel  # Could also be python -m build
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
