@@ -458,7 +458,6 @@ class WayfireSocket:
         active_workspace = self.get_focused_output()["workspace"]
         active_workspace = {"x": active_workspace["x"], "y": active_workspace["y"]}
         next_ws = self.get_next_workspace(workspaces, active_workspace)
-        print(next_ws)
         self.set_workspace(next_ws)
 
     def go_previous_workspace(self):
@@ -668,21 +667,22 @@ class WayfireSocket:
         focused_output = self.get_focused_output()
         monitor = focused_output["geometry"]
         ws_with_views = []
-
         views = self.focused_output_views()
-        for ws_x in range(focused_output["workspace"]["grid_width"]):
-            for ws_y in range(focused_output["workspace"]["grid_height"]):
-                for view in views:
-                    if self.view_visible_on_workspace(
-                        view["geometry"],
-                        ws_x - focused_output["workspace"]["x"],
-                        ws_y - focused_output["workspace"]["y"],
-                        monitor,
-                    ):
-                        ws_with_views.append(
-                            {"x": ws_x, "y": ws_y, "view-id": view["id"]}
-                        )
-        return ws_with_views
+        if views:
+            for ws_x in range(focused_output["workspace"]["grid_width"]):
+                for ws_y in range(focused_output["workspace"]["grid_height"]):
+                    for view in views:
+                        if self.view_visible_on_workspace(
+                            view["geometry"],
+                            ws_x - focused_output["workspace"]["x"],
+                            ws_y - focused_output["workspace"]["y"],
+                            monitor,
+                        ):
+                            ws_with_views.append(
+                                {"x": ws_x, "y": ws_y, "view-id": view["id"]}
+                            )
+            return ws_with_views
+        return None
 
     def get_workspace_coordinates(self, view_info):
         focused_output = self.get_focused_output()
