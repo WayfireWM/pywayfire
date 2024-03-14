@@ -28,6 +28,7 @@ jobs:
           sudo apt-get install libdbus-1-dev
           pip install -r requirements.txt
           pip install setuptools wheel
+          python -m build
   pypi-publish:
     name: upload release to PyPI
     runs-on: ubuntu-latest
