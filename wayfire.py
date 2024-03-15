@@ -243,7 +243,11 @@ class WayfireSocket:
 
     def focused_output_views(self):
         list_views = self.list_views()
+        if not list_views:
+            return
         focused_output = self.get_focused_output()
+        if not focused_output:
+            return
         output_views = [
             view for view in list_views if view["output-id"] == focused_output["id"]
         ]
@@ -329,7 +333,11 @@ class WayfireSocket:
         return self.get_focused_view()["app-id"]
 
     def get_focused_output(self, output_id=None):
+        # FIXME: this should be replaced for a wayfire method that returns
+        # the focused output already
         focused_view = self.get_focused_view()
+        if not focused_view:
+            return
         if output_id is None:
             output_id = focused_view["output-id"]
         return self.query_output(output_id)
