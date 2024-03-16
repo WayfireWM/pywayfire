@@ -446,8 +446,6 @@ class WayfireSocket:
         # Sort the list based on the 'x' and 'y' keys
         unique_workspaces.sort(key=lambda d: (d["x"], d["y"]))
 
-        print(unique_workspaces)
-
         for i, workspace in enumerate(unique_workspaces):
             if workspace == active_workspace:
                 active_index = i
@@ -566,7 +564,6 @@ class WayfireSocket:
 
     def set_fullscreen(self, view_id):
         message = get_msg_template("wm-actions/set-fullscreen")
-        print(message)
         message["data"]["view_id"] = view_id
         message["data"]["state"] = True
         self.send_json(message)
@@ -589,12 +586,10 @@ class WayfireSocket:
     def disable_input_device(self, args):
         device_id = self.find_device_id(args)
         msg = self.configure_input_device(device_id, False)
-        print(msg)
 
     def enable_input_device(self, args):
         device_id = self.find_device_id(args)
         msg = self.configure_input_device(device_id, True)
-        print(msg)
 
     def reload_plugins(self):
         filename = os.path.expanduser(os.path.join("~", ".config", "wayfire.ini"))
@@ -938,7 +933,6 @@ class WayfireSocket:
             if index <= -1:
                 break
             position = next(positions_cycle)
-            print(position, aw[index])
             self.tilling_view_position(position, aw[index])
             if index >= 0:
                 index -= 1
