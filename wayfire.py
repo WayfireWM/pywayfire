@@ -507,15 +507,30 @@ class WayfireSocket:
         return self.send_json(message)["info"]
 
     def go_next_workspace(self):
-        next = 0
-        current_workspace = self.get_active_workspace_number()
-        if current_workspace == 2:
-            next = 1
-        else:
-            next = 2
+        workspaces = list(self.total_workspaces().values())
+        active_workspace = self.get_focused_output()["workspace"]
 
-        self.set_workspace(next)
-        return True
+        # Find the index of the current active workspace
+        current_index = workspaces.index([active_workspace["y"], active_workspace["x"]])
+
+        # Calculate the index of the next workspace
+        next_index = (current_index + 1) % len(workspaces)
+
+        # Get the next workspace
+        next_workspace_coords = workspaces[next_index]
+
+        # Find the identifier of the next workspace
+        next_workspace_id = None
+        for key, value in self.total_workspaces().items():
+            if value == next_workspace_coords:
+                next_workspace_id = key
+                break
+
+        # Set the next workspace
+        if next_workspace_id:
+            self.set_workspace(
+                {"y": next_workspace_coords[0], "x": next_workspace_coords[1]}
+            )
 
     def iterate_dicts(self, dicts):
         index = 0
