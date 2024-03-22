@@ -1,7 +1,8 @@
-Waypy serves as a python library, offering bindings specifically designed to interact with the wayfire compositor.
+ Welcome to the future of interaction with the Wayfire compositor. This is a Python module meticulously crafted to streamline control and enhance interaction with the Wayfire compositor through Inter-Process Communication (IPC)
+ 
+## Quickstart
 
-# install
-
+### Installation
 ```
 pip install wayfire 
 
@@ -13,39 +14,39 @@ python3 -m pip install .
 
 ```
 
-# Usage
+### Usage examples
 
 ```
 from wayfire import sock
 ```
 
-## Get focused window info
+#### Get focused window info
 ```
 sock.get_focused_view()
 ```
 
-## Get pid from focused window
+#### Get pid from focused window
 ```
 sock.get_focused_view_pid()
 ```
 
-## Get active workspace number
+#### Get active workspace number
 ```
 sock.get_active_workspace_number()
 ```
 
-## Get focused monitor info
+#### Get focused monitor info
 ```
 sock.get_focused_output()
 ```
 
-## Go to another workspace
+#### Go to another workspace
 ```
 workspace_number = 2
 sock.set_workspace(workspace_number)
 ```
 
-## Go to the next workspace
+#### Go to the next workspace
 ```
 sock.go_next_workspace()
 ```
@@ -55,7 +56,7 @@ sock.go_next_workspace()
 sock.go_previous_workspace()
 ```
 
-## Move focused window to another workspace
+#### Move focused window to another workspace
 ```
 view_id = sock.get_focused_view()["id"]
 workspace_number = 2
@@ -63,56 +64,56 @@ sock.set_workspace(workspace_number, view_id)
 
 ```
 
-## Get the list of all windows
+#### Get the list of all windows
 ```
 sock.list_views()
 ```
 
-## Monitor info fom given id
+#### Monitor info fom given id
 ```
 monitor_output_id = 1
 sock.query_output(monitor_output_id)
 ```
 
 
-## Get active workspace info
+#### Get active workspace info
 ```
 sock.get_active_workspace_info()
 ```
 
 
-## Get focused monitor info
+#### Get focused monitor info
 ```
 sock.get_focused_output_name()
 ```
 
-## Get focused monitor id
+#### Get focused monitor id
 ```
 sock.get_focused_output_id()
 ```
 
-## Get focused monitor resolution
+#### Get focused monitor resolution
 ```
 sock.get_focused_output_geometry()
 ```
 
-## Get focused monitor workarea
+#### Get focused monitor workarea
 ```
 sock.get_focused_output_workarea()
 ```
 
-## Set focus
+#### Set focus
 ```
 view_id = 1
 sock.set_focus(view_id)
 ```
 
-## List devices
+#### List devices
 ```
 sock.list_input_devices()
 ```
 
-## watch events
+#### watch events
 ```
 sock.watch()
 
@@ -129,4 +130,4 @@ while True:
 ```
 
 
-# [Use the wiki for more info](https://github.com/killown/waypy/wiki)
+#### [Use the wiki for more info](https://github.com/killown/waypy/wiki)
