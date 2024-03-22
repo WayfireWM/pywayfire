@@ -69,6 +69,11 @@ class WayfireSocket:
             raise Exception(response["error"])
         return response
 
+    def list_methods(self):
+        query = get_msg_template("list-methods")
+        response = self.send_json(query)
+        return js.dumps(response["methods"], indent=4)
+
     def xdg_open(self, path):
         call("xdg-open {0}".format(path).split())
 
