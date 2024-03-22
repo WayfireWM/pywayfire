@@ -8,7 +8,17 @@ import configparser
 from itertools import filterfalse
 
 
-def get_msg_template(method: str):
+def get_msg_template(method: str, methods=None):
+    plugin = method.split("/")[0]
+    if methods:
+        if method not in methods:
+            print(
+                "To utilize this feature, please ensure that the '{0}' Wayfire plugin is enabled.".format(
+                    plugin
+                )
+            )
+            print("Once enabled, reload the Wayfire module to apply the changes.")
+            return None
     # Create generic message template
     message = {}
     message["method"] = method
@@ -49,6 +59,8 @@ class WayfireSocket:
                     print(e)
         else:
             self.client.connect(socket_name)
+        # initialize it once for performance in some cases
+        self.methods = self.list_methods()
 
     def read_exact(self, n):
         response = bytes()
@@ -72,7 +84,10 @@ class WayfireSocket:
     def list_methods(self):
         query = get_msg_template("list-methods")
         response = self.send_json(query)
-        return js.dumps(response["methods"], indent=4)
+        data = js.dumps(response["methods"], indent=4)
+        data = data.replace("'", '"')
+        data_list = js.loads(data)
+        return data_list
 
     def xdg_open(self, path):
         call("xdg-open {0}".format(path).split())
@@ -104,7 +119,10 @@ class WayfireSocket:
             call("wlopm --toggle {}".format(output_name).split())
 
     def get_tiling_layout(self):
-        msg = get_msg_template("simple-tile/get-layout")
+        method = "simple-tile/get-layout"
+        msg = get_msg_template(method, self.methods)
+        if msg is None:
+            return
         output = self.get_focused_output()
         wset = output["wset-index"]
         x = output["workspace"]["x"]
@@ -116,7 +134,9 @@ class WayfireSocket:
         return self.send_json(msg)["layout"]
 
     def set_tiling_layout(self, layout):
-        msg = get_msg_template("simple-tile/set-layout")
+        msg = get_msg_template("simple-tile/set-layout", self.methods)
+        if msg is None:
+            return
         output = self.get_focused_output()
         wset = output["wset-index"]
         x = output["workspace"]["x"]
@@ -183,13 +203,17 @@ class WayfireSocket:
         call(["grim", "-o", name, output_file])
 
     def screenshot(self, id, filename):
-        capture = get_msg_template("view-shot/capture")
+        capture = get_msg_template("view-shot/capture", self.methods)
+        if capture is None:
+            return
         capture["data"]["view-id"] = id
         capture["data"]["file"] = filename
         self.send_json(capture)
 
     def move_cursor(self, x: int, y: int):
-        message = get_msg_template("stipc/move_cursor")
+        message = get_msg_template("stipc/move_cursor", self.methods)
+        if message is None:
+            return
         message["data"]["x"] = x
         message["data"]["y"] = y
         return self.send_json(message)
@@ -200,37 +224,51 @@ class WayfireSocket:
         If S-BTN..., then the super modifier will be pressed as well.
         mode is full, press or release
         """
-        message = get_msg_template("stipc/feed_button")
+        message = get_msg_template("stipc/feed_button", self.methods)
+        if message is None:
+            return
         message["data"]["mode"] = mode
         message["data"]["combo"] = btn_with_mod
         return self.send_json(message)
 
     def watch(self):
         method = "window-rules/events/watch"
-        message = get_msg_template(method)
+        message = get_msg_template(method, self.methods)
+        if message is None:
+            return
         return self.send_json(message)
 
     def query_output(self, output_id: int):
-        message = get_msg_template("window-rules/output-info")
+        message = get_msg_template("window-rules/output-info", self.methods)
+        if message is None:
+            return
         message["data"]["id"] = output_id
         return self.send_json(message)
 
     def list_outputs(self):
-        message = get_msg_template("window-rules/list-outputs")
+        message = get_msg_template("window-rules/list-outputs", self.methods)
+        if message is None:
+            return
         return self.send_json(message)
 
     def list_wsets(self):
-        message = get_msg_template("window-rules/list-wsets")
+        message = get_msg_template("window-rules/list-wsets", self.methods)
+        if message is None:
+            return
         return self.send_json(message)
 
     def set_key_state(self, key: str, state: bool):
-        message = get_msg_template("stipc/feed_key")
+        message = get_msg_template("stipc/feed_key", self.methods)
+        if message is None:
+            return
         message["data"]["key"] = key
         message["data"]["state"] = state
         return self.send_json(message)
 
     def run(self, cmd):
-        message = get_msg_template("stipc/run")
+        message = get_msg_template("stipc/run", self.methods)
+        if message is None:
+            return
         message["data"]["cmd"] = cmd
         return self.send_json(message)
 
@@ -250,40 +288,54 @@ class WayfireSocket:
             self.set_key_state(key, False)
 
     def toggle_showdesktop(self):
-        message = get_msg_template("wm-actions/toggle_showdesktop")
+        message = get_msg_template("wm-actions/toggle_showdesktop", self.methods)
+        if message is None:
+            return
         return self.send_json(message)
 
     def set_sticky(self, view_id, state):
         message = get_msg_template("wm-actions/set-sticky")
+        if message is None:
+            return
         message["data"]["view_id"] = view_id
         message["data"]["state"] = state
         return self.send_json(message)
 
     def send_to_back(self, view_id, state):
         message = get_msg_template("wm-actions/send-to-back")
+        if message is None:
+            return
         message["data"]["view_id"] = view_id
         message["data"]["state"] = state
         return self.send_json(message)
 
     def set_minimized(self, view_id, state):
         message = get_msg_template("wm-actions/set-minimized")
+        if message is None:
+            return
         message["data"]["view_id"] = view_id
         message["data"]["state"] = state
         return self.send_json(message)
 
     def scale_toggle(self):
         message = get_msg_template("scale/toggle")
+        if message is None:
+            return
         self.send_json(message)
         return True
 
     def scale_leave(self):
         # only works in the fork
         message = get_msg_template("scale/leave")
+        if message is None:
+            return
         self.send_json(message)
         return True
 
     def list_views(self):
         list_views = self.send_json(get_msg_template("window-rules/list-views"))
+        if list_views is None:
+            return
         clean_list = []
         for view in list_views:
             if view["role"] == "desktop-environment":
@@ -319,6 +371,8 @@ class WayfireSocket:
 
     def configure_view(self, view_id: int, x: int, y: int, w: int, h: int):
         message = get_msg_template("window-rules/configure-view")
+        if message is None:
+            return
         message["data"]["id"] = view_id
         message["data"]["geometry"] = geometry_to_json(x, y, w, h)
         return self.send_json(message)
@@ -330,11 +384,15 @@ class WayfireSocket:
 
     def set_focus(self, view_id: int):
         message = get_msg_template("window-rules/focus-view")
+        if message is None:
+            return
         message["data"]["id"] = view_id
         return self.send_json(message)
 
     def get_focused_view(self):
         message = get_msg_template("window-rules/get-focused-view")
+        if message is None:
+            return
         return self.send_json(message)["info"]
 
     def get_focused_view_info(self):
@@ -409,6 +467,8 @@ class WayfireSocket:
 
     def get_focused_output(self):
         message = get_msg_template("window-rules/get-focused-output")
+        if message is None:
+            return
         return self.send_json(message)["info"]
 
     def coordinates_to_number(self, rows, cols, coordinates):
@@ -467,12 +527,16 @@ class WayfireSocket:
 
     def set_view_always_on_top(self, view_id: int, always_on_top: bool):
         message = get_msg_template("wm-actions/set-always-on-top")
+        if message is None:
+            return
         message["data"]["view_id"] = view_id
         message["data"]["state"] = always_on_top
         return self.send_json(message)
 
     def set_view_alpha(self, view_id: int, alpha: float):
         message = get_msg_template("wf/alpha/set-view-alpha")
+        if message is None:
+            return
         message["data"] = {}
         message["data"]["view-id"] = view_id
         message["data"]["alpha"] = alpha
@@ -480,11 +544,15 @@ class WayfireSocket:
 
     def get_view_alpha(self, view_id: int):
         message = get_msg_template("wf/alpha/get-view-alpha")
+        if message is None:
+            return
         message["data"]["view-id"] = view_id
         return self.send_json(message)
 
     def set_view_shader(self, view_id: int, shader: str):
         message = get_msg_template("wf/filters/set-view-shader")
+        if message is None:
+            return
         message["data"] = {}
         message["data"]["view-id"] = view_id
         message["data"]["shader-path"] = shader
@@ -492,12 +560,16 @@ class WayfireSocket:
 
     def unset_view_shader(self, view_id: int):
         message = get_msg_template("wf/filters/unset-view-shader")
+        if message is None:
+            return
         message["data"] = {}
         message["data"]["view-id"] = view_id
         return self.send_json(message)
 
     def list_input_devices(self):
         message = get_msg_template("input/list-devices")
+        if message is None:
+            return
         return self.send_json(message)
 
     def get_view_pid(self, view_id):
@@ -508,6 +580,8 @@ class WayfireSocket:
 
     def get_view(self, view_id):
         message = get_msg_template("window-rules/view-info")
+        if message is None:
+            return
         message["data"]["id"] = view_id
         return self.send_json(message)["info"]
 
@@ -605,6 +679,8 @@ class WayfireSocket:
 
     def close_view(self, view_id):
         message = get_msg_template("window-rules/close-view")
+        if message is None:
+            return
         message["data"]["id"] = view_id
         return self.send_json(message)
 
@@ -721,12 +797,16 @@ class WayfireSocket:
 
     def set_fullscreen(self, view_id):
         message = get_msg_template("wm-actions/set-fullscreen")
+        if message is None:
+            return
         message["data"]["view_id"] = view_id
         message["data"]["state"] = True
         self.send_json(message)
 
     def toggle_expo(self):
         message = get_msg_template("expo/toggle")
+        if message is None:
+            return
         self.send_json(message)
 
     def find_device_id(self, name_or_id_or_type):
@@ -1130,7 +1210,9 @@ class WayfireSocket:
         x, y = workspace["x"], workspace["y"]
         focused_output = self.get_focused_output()
         output_id = focused_output["id"]
-        message = get_msg_template("vswitch/set-workspace")
+        message = get_msg_template("vswitch/set-workspace", self.methods)
+        if message is None:
+            return
         message["data"]["x"] = x
         message["data"]["y"] = y
         message["data"]["output-id"] = output_id
@@ -1141,6 +1223,8 @@ class WayfireSocket:
 
     def configure_input_device(self, id, enabled: bool):
         message = get_msg_template("input/configure-device")
+        if message is None:
+            return
         message["data"]["id"] = id
         message["data"]["enabled"] = enabled
         return self.send_json(message)
