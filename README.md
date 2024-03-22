@@ -51,7 +51,7 @@ sock.set_workspace(workspace_number)
 sock.go_next_workspace()
 ```
 
-## Go to the previous workspace
+#### Go to the previous workspace
 ```
 sock.go_previous_workspace()
 ```
