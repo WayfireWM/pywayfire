@@ -9,15 +9,23 @@ from itertools import filterfalse
 
 
 def get_msg_template(method: str, methods=None):
-    plugin = method.split("/")[0]
+    plugin = None
+    # just in case there is a unknow situation where the method has no plugin
+    if "/" in method:
+        plugin = method.split("/")[0]
     if methods:
         if method not in methods:
-            print(
-                "To utilize this feature, please ensure that the '{0}' Wayfire plugin is enabled.".format(
-                    plugin
+            if plugin is not None:
+                print(
+                    "To utilize this feature, please ensure that the '{0}' Wayfire plugin is enabled.".format(
+                        plugin
+                    )
                 )
-            )
-            print("Once enabled, reload the Wayfire module to apply the changes.")
+                print("Once enabled, reload the Wayfire module to apply the changes.")
+            else:
+                print(
+                    "No plugin found in the given method, cannot utilize this feature"
+                )
             return None
     # Create generic message template
     message = {}
@@ -383,6 +391,16 @@ class WayfireSocket:
         return self.send_json(message)
 
     def set_focus(self, view_id: int):
+        # set focus should also go for the workpace
+        # no meaning in set view_focus in a workspace which is not the current one
+        wviews = self.get_workspaces_with_views()
+        ws = None
+        if wviews:
+            ws = [i for i in wviews if view_id == i["view-id"]]
+        if ws:
+            ws = ws[0]
+            workspace = {"x": ws["x"], "y": ws["y"]}
+            self.set_workspace(workspace)
         message = get_msg_template("window-rules/focus-view")
         if message is None:
             return
