@@ -372,10 +372,21 @@ class WayfireSocket:
 
     def list_pids(self):
         list_views = self.list_views()
+        if not list_views:
+            return
         list_pids = []
         for view in list_views:
             list_pids.append(view["pid"])
         return list_pids
+
+    def list_ids(self):
+        list_views = self.list_views()
+        if not list_views:
+            return
+        list_ids = []
+        for view in list_views:
+            list_ids.append(view["id"])
+        return list_ids
 
     def configure_view(self, view_id: int, x: int, y: int, w: int, h: int):
         message = get_msg_template("window-rules/configure-view")
@@ -390,22 +401,33 @@ class WayfireSocket:
         message["data"]["view_id"] = view_id
         return self.send_json(message)
 
-    def set_focus(self, view_id: int):
-        # set focus should also go for the workpace
-        # no meaning in set view_focus in a workspace which is not the current one
+    def get_view_workspace(self, view_id):
         wviews = self.get_workspaces_with_views()
         ws = None
         if wviews:
             ws = [i for i in wviews if view_id == i["view-id"]]
         if ws:
             ws = ws[0]
-            workspace = {"x": ws["x"], "y": ws["y"]}
-            self.set_workspace(workspace)
+            return {"x": ws["x"], "y": ws["y"]}
+        return None
+
+    def set_focus(self, view_id: int):
         message = get_msg_template("window-rules/focus-view")
         if message is None:
             return
         message["data"]["id"] = view_id
         return self.send_json(message)
+
+    def go_workspace_set_focus(self, view_id):
+        focused_output = self.get_focused_output_id()
+        view_output_id = self.get_view_output_id(view_id)
+        # needed to change the workspace if not the focused output
+        if focused_output != view_output_id:
+            self.set_focus(view_id)
+        workspace = self.get_view_workspace(view_id)
+        if workspace:
+            self.set_workspace(workspace)
+        self.set_focus(view_id)
 
     def get_focused_view(self):
         message = get_msg_template("window-rules/get-focused-view")
