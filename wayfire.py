@@ -1419,11 +1419,11 @@ class WayfireSocket:
             (
                 self.click_and_drag,
                 (
-                    "BTN_LEFT",
-                    randint(1, 10000),
-                    randint(1, 10000),
-                    randint(1, 10000),
-                    randint(1, 10000),
+                    "S-BTN_LEFT",
+                    randint(100, 1000),
+                    randint(100, 1000),
+                    randint(100, 1000),
+                    randint(100, 1000),
                     True,
                 ),
             ),
