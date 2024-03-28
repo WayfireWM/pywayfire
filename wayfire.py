@@ -1376,7 +1376,7 @@ class WayfireSocket:
         self.get_workspaces_without_views()
         self.get_views_from_active_workspace()
 
-    def test_wayfire(self, number_of_views_to_open, max_tries=1):
+    def test_wayfire(self, number_of_views_to_open, max_tries=1, speed=0):
         view_id = choice([i["id"] for i in self.list_views()])
         workspaces = self.total_workspaces()
         if workspaces:
@@ -1455,6 +1455,8 @@ class WayfireSocket:
             thread = threading.Thread(target=gtk_view)
             thread.start()
         while iterations < max_tries:
+            if speed != 0:
+                time.sleep(speed / 1000)
             try:
                 # only run dpms two times
                 if dpms_allowed > max_tries / 2:
