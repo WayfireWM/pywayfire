@@ -1392,8 +1392,6 @@ class WayfireSocket:
 
         iterations = 0
         while iterations < max_tries:
-            if iterations > max_tries:
-                break
             try:
                 random_function, args = choice(functions)
                 result = random_function(*args)
