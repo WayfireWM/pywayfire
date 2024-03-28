@@ -6,6 +6,49 @@ from itertools import cycle
 import dbus
 import configparser
 from itertools import filterfalse
+import time
+from random import randint, choice, random
+
+try:
+    import gi
+
+    try:
+        gi.require_version("Gtk", "3.0")
+    except ValueError:
+        # Gtk is already loaded with the required version
+        pass
+    from gi.repository import Gtk, GLib
+except ImportError:
+    print(
+        "GTK is not available. Please make sure the required libraries are installed."
+    )
+
+
+class TestWindow(Gtk.Window):
+    def __init__(self):
+        Gtk.Window.__init__(self, title="Test Window")
+        self.connect("destroy", self.on_destroy)
+        self.label = Gtk.Label(label="Test Window")
+        self.add(self.label)
+        self.show_all()
+
+    def on_destroy(self, window):
+        Gtk.main_quit()
+
+
+def open_close_window():
+    window = TestWindow()
+    GLib.timeout_add(50, close_window, window)
+
+
+def close_window(window):
+    window.destroy()
+    return False
+
+
+def gtk_view():
+    open_close_window()
+    Gtk.main()
 
 
 def get_msg_template(method: str, methods=None):
@@ -202,6 +245,8 @@ class WayfireSocket:
             {"handle_token": "my_token"},
             dbus_interface="org.freedesktop.portal.Screenshot",
         )
+        # lets wait save the file before try opening it
+        time.sleep(1)
         self.xdg_open("/tmp/out.png")
 
     def screenshot_focused_monitor(self):
@@ -209,6 +254,7 @@ class WayfireSocket:
         name = output["name"]
         output_file = "/tmp/output-{0}.png".format(name)
         call(["grim", "-o", name, output_file])
+        self.xdg_open(output_file)
 
     def screenshot(self, id, filename):
         capture = get_msg_template("view-shot/capture", self.methods)
@@ -226,7 +272,7 @@ class WayfireSocket:
         message["data"]["y"] = y
         return self.send_json(message)
 
-    def click_button(self, btn_with_mod: str, mode: str):
+    def click_button(self, mode, btn_with_mod=None):
         """
         btn_with_mod can be S-BTN_LEFT/BTN_RIGHT/etc. or just BTN_LEFT/...
         If S-BTN..., then the super modifier will be pressed as well.
@@ -236,7 +282,8 @@ class WayfireSocket:
         if message is None:
             return
         message["data"]["mode"] = mode
-        message["data"]["combo"] = btn_with_mod
+        if btn_with_mod:
+            message["data"]["combo"] = btn_with_mod
         return self.send_json(message)
 
     def watch(self):
@@ -261,6 +308,15 @@ class WayfireSocket:
 
     def list_wsets(self):
         message = get_msg_template("window-rules/list-wsets", self.methods)
+        if message is None:
+            return
+        return self.send_json(message)
+
+    def wset_info(self, id):
+        message = get_msg_template("window-rules/wset-info", self.methods)
+        if not message:
+            return
+        message["data"]["id"] = id
         if message is None:
             return
         return self.send_json(message)
@@ -347,8 +403,6 @@ class WayfireSocket:
         clean_list = []
         for view in list_views:
             if view["role"] == "desktop-environment":
-                continue
-            if view["app-id"] == "nil":
                 continue
             if view["mapped"] is False:
                 continue
@@ -1268,6 +1322,85 @@ class WayfireSocket:
         message["data"]["id"] = id
         message["data"]["enabled"] = enabled
         return self.send_json(message)
+
+    def test_wayfire(self, max_tries=1):
+        focused_view_id = self.get_focused_view_id()
+        workspaces = self.total_workspaces()
+        if workspaces:
+            workspaces = workspaces.values()
+            workspaces = [{"x": x, "y": y} for x, y in workspaces]
+
+        functions = [
+            (self.get_view, (focused_view_id,)),
+            (self.set_focused_view_to_workspace_without_views, ()),
+            (self.move_cursor, (randint(100, 1000), randint(100, 1000))),
+            (self.click_button, (choice(["BTN_RIGHT", "BTN_LEFT"]),)),
+            (
+                self.set_minimized,
+                (
+                    focused_view_id,
+                    choice([True, False]),
+                ),
+            ),
+            (self.list_outputs, ()),
+            (self.list_wsets, ()),
+            (self.toggle_showdesktop, ()),
+            (self.wset_info, (focused_view_id,)),
+            (
+                self.set_sticky,
+                (
+                    focused_view_id,
+                    choice([True, False]),
+                ),
+            ),
+            (
+                self.send_to_back,
+                (
+                    focused_view_id,
+                    choice([True, False]),
+                ),
+            ),
+            (self.scale_toggle, ()),
+            (self.toggle_expo, ()),
+            (
+                self.configure_view,
+                (
+                    focused_view_id,
+                    randint(10, 1000),
+                    randint(10, 1000),
+                    randint(10, 1000),
+                    randint(10, 1000),
+                ),
+            ),
+            (self.set_focus, (choice([i["id"] for i in self.list_views()]),)),
+            (
+                self.set_workspace,
+                (
+                    choice(workspaces),
+                    choice([i["id"] for i in self.list_views()]),
+                ),
+            ),
+            (
+                self.set_view_alpha,
+                (choice([i["id"] for i in self.list_views()]), random() * 1.0),
+            ),
+            (
+                gtk_view,
+                (),
+            ),
+        ]
+
+        iterations = 0
+        while iterations < max_tries:
+            if iterations > max_tries:
+                break
+            try:
+                random_function, args = choice(functions)
+                result = random_function(*args)
+                iterations += 1
+                print(result)
+            except Exception as e:
+                print(e)
 
 
 addr = os.getenv("WAYFIRE_SOCKET")
