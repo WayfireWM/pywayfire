@@ -1364,6 +1364,18 @@ class WayfireSocket:
         self.click_button("BTN_LEFT", "press")
         self.click_button("BTN_LEFT", "press")
 
+    def test_list_info(self, view_id):
+        self.list_outputs()
+        self.list_wsets()
+        self.wset_info(view_id)
+        self.get_view(view_id)
+        self.get_view_info(view_id)
+        self.get_view_alpha(view_id)
+        self.list_input_devices()
+        self.get_workspaces_with_views()
+        self.get_workspaces_without_views()
+        self.get_views_from_active_workspace()
+
     def test_wayfire(self, number_of_views_to_open, max_tries=1):
         view_id = choice([i["id"] for i in self.list_views()])
         workspaces = self.total_workspaces()
@@ -1372,8 +1384,6 @@ class WayfireSocket:
             workspaces = [{"x": x, "y": y} for x, y in workspaces]
 
         functions = [
-            (self.get_view, (view_id,)),
-            (self.get_view_info, (view_id,)),
             (self.go_next_workspace_with_views, ()),
             (self.set_focused_view_to_workspace_without_views, ()),
             (self.test_move_cursor_and_click, ()),
@@ -1384,10 +1394,8 @@ class WayfireSocket:
                     "press",
                 ),
             ),
-            (self.list_outputs, ()),
-            (self.list_wsets, ()),
+            (self.test_list_info, (view_id)),
             (self.toggle_showdesktop, ()),
-            (self.wset_info, (view_id,)),
             (
                 self.set_sticky,
                 (
@@ -1408,10 +1416,10 @@ class WayfireSocket:
                 self.configure_view,
                 (
                     view_id,
-                    randint(10, 10000),
-                    randint(10, 10000),
-                    randint(10, 10000),
-                    randint(10, 10000),
+                    randint(1, 10000),
+                    randint(1, 10000),
+                    randint(1, 10000),
+                    randint(1, 10000),
                 ),
             ),
             (self.set_focus, (view_id,)),
