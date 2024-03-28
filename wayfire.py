@@ -1342,6 +1342,55 @@ class WayfireSocket:
         message["data"]["enabled"] = enabled
         return self.send_json(message)
 
+    def test_random_set_view_position(self, view_id):
+        actions = [
+            self.set_view_top_left,
+            self.set_view_top_right,
+            self.set_view_bottom_left,
+            self.set_view_right,
+            self.set_view_left,
+            self.set_view_bottom,
+            self.set_view_top,
+            self.set_view_center,
+            self.set_view_bottom_right,
+        ]
+        choice(actions)(view_id)
+
+    def test_random_change_view_state(self, view_id):
+        actions = [
+            lambda: self.maximize(view_id),
+            lambda: self.set_fullscreen(view_id),
+            lambda: self.set_minimized(view_id, True),
+            lambda: self.set_minimized(view_id, False),
+            lambda: self.set_sticky(view_id, choice([True, False])),
+            lambda: self.send_to_back(view_id, choice([True, False])),
+            lambda: self.set_view_alpha(view_id, random() * 1.0),
+        ]
+        choice(actions)()
+
+    def test_random_move_cursor_and_click(self):
+        actions = [
+            lambda: self.move_cursor(randint(100, 10000), randint(100, 10000)),
+            lambda: self.click_button("BTN_LEFT", "press"),
+            lambda: self.click_button("BTN_LEFT", "press"),
+        ]
+        choice(actions)()
+
+    def test_random_list_info(self, view_id):
+        actions = [
+            self.list_outputs,
+            self.list_wsets,
+            lambda: self.wset_info(view_id),
+            lambda: self.get_view(view_id),
+            lambda: self.get_view_info(view_id),
+            lambda: self.get_view_alpha(view_id),
+            self.list_input_devices,
+            self.get_workspaces_with_views,
+            self.get_workspaces_without_views,
+            self.get_views_from_active_workspace,
+        ]
+        choice(actions)()
+
     def test_set_view_position(self, view_id):
         self.set_view_top_left(view_id)
         self.set_view_top_right(view_id)
@@ -1358,6 +1407,9 @@ class WayfireSocket:
         self.set_fullscreen(view_id)
         self.set_minimized(view_id, True)
         self.set_minimized(view_id, False)
+        self.set_sticky(view_id, choice([True, False]))
+        self.send_to_back(view_id, choice([True, False]))
+        self.set_view_alpha(view_id, random() * 1.0)
 
     def test_move_cursor_and_click(self):
         self.move_cursor(randint(100, 10000), randint(100, 10000))
@@ -1376,6 +1428,15 @@ class WayfireSocket:
         self.get_workspaces_without_views()
         self.get_views_from_active_workspace()
 
+    def test_toggle_plugins(self):
+        functions = [
+            (self.scale_toggle, ()),
+            (self.toggle_expo, ()),
+            (self.toggle_showdesktop, ()),
+        ]
+        random_function, args = choice(functions)
+        random_function(*args)
+
     def test_wayfire(self, number_of_views_to_open, max_tries=1, speed=0):
         view_id = choice([i["id"] for i in self.list_views()])
         workspaces = self.total_workspaces()
@@ -1387,6 +1448,10 @@ class WayfireSocket:
             (self.go_next_workspace_with_views, ()),
             (self.set_focused_view_to_workspace_without_views, ()),
             (self.test_move_cursor_and_click, ()),
+            (self.test_random_set_view_position, (view_id,)),
+            (self.test_random_change_view_state, (view_id,)),
+            (self.test_random_move_cursor_and_click, ()),
+            (self.test_random_list_info, (view_id,)),
             (
                 self.click_button,
                 (
@@ -1395,23 +1460,7 @@ class WayfireSocket:
                 ),
             ),
             (self.test_list_info, (view_id)),
-            (self.toggle_showdesktop, ()),
-            (
-                self.set_sticky,
-                (
-                    view_id,
-                    choice([True, False]),
-                ),
-            ),
-            (
-                self.send_to_back,
-                (
-                    view_id,
-                    choice([True, False]),
-                ),
-            ),
-            (self.scale_toggle, ()),
-            (self.toggle_expo, ()),
+            (self.test_toggle_plugins, ()),
             (
                 self.configure_view,
                 (
@@ -1442,10 +1491,6 @@ class WayfireSocket:
                     view_id,
                 ),
             ),
-            (
-                self.set_view_alpha,
-                (view_id, random() * 1.0),
-            ),
             (self.test_change_view_state, (view_id)),
         ]
 
@@ -1456,7 +1501,8 @@ class WayfireSocket:
             thread.start()
         while iterations < max_tries:
             if speed != 0:
-                time.sleep(speed / 1000)
+                random_time = speed / randint(1, speed)
+                time.sleep(random_time / 1000)
             try:
                 # only run dpms two times
                 if dpms_allowed > max_tries / 2:
