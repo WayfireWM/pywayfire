@@ -8,6 +8,7 @@ import configparser
 from itertools import filterfalse
 import time
 from random import randint, choice, random
+import threading
 
 try:
     import gi
@@ -24,6 +25,12 @@ except ImportError:
     )
 
 
+def turn_off_on_outputs():
+    self.dpms("off")
+    time.sleep(10)
+    self.dpms("on")
+
+
 class TestWindow(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self, title="Test Window")
@@ -36,9 +43,9 @@ class TestWindow(Gtk.Window):
         Gtk.main_quit()
 
 
-def open_close_window():
+def open_close_window(timeout):
     window = TestWindow()
-    GLib.timeout_add(50, close_window, window)
+    GLib.timeout_add(timeout, close_window, window)
 
 
 def close_window(window):
@@ -47,7 +54,8 @@ def close_window(window):
 
 
 def gtk_view():
-    open_close_window()
+    timeout = 1000000000
+    open_close_window(timeout)
     Gtk.main()
 
 
@@ -272,18 +280,16 @@ class WayfireSocket:
         message["data"]["y"] = y
         return self.send_json(message)
 
-    def click_button(self, mode, btn_with_mod=None):
+    def click_button(self, btn_with_mod: str, mode: str):
         """
         btn_with_mod can be S-BTN_LEFT/BTN_RIGHT/etc. or just BTN_LEFT/...
         If S-BTN..., then the super modifier will be pressed as well.
         mode is full, press or release
         """
         message = get_msg_template("stipc/feed_button", self.methods)
-        if message is None:
-            return
+        message["method"] = "stipc/feed_button"
         message["data"]["mode"] = mode
-        if btn_with_mod:
-            message["data"]["combo"] = btn_with_mod
+        message["data"]["combo"] = btn_with_mod
         return self.send_json(message)
 
     def watch(self):
@@ -678,6 +684,19 @@ class WayfireSocket:
             return
         message["data"]["id"] = view_id
         return self.send_json(message)["info"]
+
+    def click_and_drag(
+        self, button, start_x, start_y, end_x, end_y, release=True, steps=10
+    ):
+        dx = end_x - start_x
+        dy = end_y - start_y
+
+        self.move_cursor(start_x, start_y)
+        self.click_button(button, "press")
+        for i in range(steps + 1):
+            self.move_cursor(start_x + dx * i // steps, start_y + dy * i // steps)
+        if release:
+            self.click_button(button, "release")
 
     def go_next_workspace(self):
         workspaces = list(self.total_workspaces().values())
@@ -1323,40 +1342,63 @@ class WayfireSocket:
         message["data"]["enabled"] = enabled
         return self.send_json(message)
 
-    def test_wayfire(self, max_tries=1):
-        focused_view_id = self.get_focused_view_id()
+    def test_set_view_position(self, view_id):
+        self.set_view_top_left(view_id)
+        self.set_view_top_right(view_id)
+        self.set_view_bottom_left(view_id)
+        self.set_view_right(view_id)
+        self.set_view_left(view_id)
+        self.set_view_bottom(view_id)
+        self.set_view_top(view_id)
+        self.set_view_center(view_id)
+        self.set_view_bottom_right(view_id)
+
+    def test_change_view_state(self, view_id):
+        self.maximize(view_id)
+        self.set_fullscreen(view_id)
+        self.set_minimized(view_id, True)
+        self.set_minimized(view_id, False)
+
+    def test_move_cursor_and_click(self):
+        self.move_cursor(randint(100, 10000), randint(100, 10000))
+        self.click_button("BTN_LEFT", "press")
+        self.click_button("BTN_LEFT", "press")
+
+    def test_wayfire(self, number_of_views_to_open, max_tries=1):
+        view_id = choice([i["id"] for i in self.list_views()])
         workspaces = self.total_workspaces()
         if workspaces:
             workspaces = workspaces.values()
             workspaces = [{"x": x, "y": y} for x, y in workspaces]
 
         functions = [
-            (self.get_view, (focused_view_id,)),
+            (self.get_view, (view_id,)),
+            (self.get_view_info, (view_id,)),
+            (self.go_next_workspace_with_views, ()),
             (self.set_focused_view_to_workspace_without_views, ()),
-            (self.move_cursor, (randint(100, 1000), randint(100, 1000))),
-            (self.click_button, (choice(["BTN_RIGHT", "BTN_LEFT"]),)),
+            (self.test_move_cursor_and_click, ()),
             (
-                self.set_minimized,
+                self.click_button,
                 (
-                    focused_view_id,
-                    choice([True, False]),
+                    choice(["BTN_RIGHT", "BTN_LEFT"]),
+                    "press",
                 ),
             ),
             (self.list_outputs, ()),
             (self.list_wsets, ()),
             (self.toggle_showdesktop, ()),
-            (self.wset_info, (focused_view_id,)),
+            (self.wset_info, (view_id,)),
             (
                 self.set_sticky,
                 (
-                    focused_view_id,
+                    view_id,
                     choice([True, False]),
                 ),
             ),
             (
                 self.send_to_back,
                 (
-                    focused_view_id,
+                    view_id,
                     choice([True, False]),
                 ),
             ),
@@ -1365,34 +1407,55 @@ class WayfireSocket:
             (
                 self.configure_view,
                 (
-                    focused_view_id,
-                    randint(10, 1000),
-                    randint(10, 1000),
-                    randint(10, 1000),
-                    randint(10, 1000),
+                    view_id,
+                    randint(10, 10000),
+                    randint(10, 10000),
+                    randint(10, 10000),
+                    randint(10, 10000),
                 ),
             ),
-            (self.set_focus, (choice([i["id"] for i in self.list_views()]),)),
+            (self.set_focus, (view_id,)),
+            (self.test_set_view_position, (view_id)),
+            (
+                self.click_and_drag,
+                (
+                    "BTN_LEFT",
+                    randint(1, 10000),
+                    randint(1, 10000),
+                    randint(1, 10000),
+                    randint(1, 10000),
+                    True,
+                ),
+            ),
             (
                 self.set_workspace,
                 (
                     choice(workspaces),
-                    choice([i["id"] for i in self.list_views()]),
+                    view_id,
                 ),
             ),
             (
                 self.set_view_alpha,
-                (choice([i["id"] for i in self.list_views()]), random() * 1.0),
+                (view_id, random() * 1.0),
             ),
-            (
-                gtk_view,
-                (),
-            ),
+            (self.test_change_view_state, (view_id)),
         ]
 
         iterations = 0
+        dpms_allowed = 0
+        for i in range(number_of_views_to_open):
+            thread = threading.Thread(target=gtk_view)
+            thread.start()
         while iterations < max_tries:
+            if iterations > max_tries:
+                break
             try:
+                # only run dpms two times
+                if dpms_allowed > max_tries / 2:
+                    thread_outputs = threading.Thread(target=turn_off_on_outputs)
+                    thread_outputs.start()
+                    dpms_allowed = 0
+                dpms_allowed += 1
                 random_function, args = choice(functions)
                 result = random_function(*args)
                 iterations += 1
