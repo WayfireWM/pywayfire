@@ -1447,8 +1447,6 @@ class WayfireSocket:
             thread = threading.Thread(target=gtk_view)
             thread.start()
         while iterations < max_tries:
-            if iterations > max_tries:
-                break
             try:
                 # only run dpms two times
                 if dpms_allowed > max_tries / 2:
