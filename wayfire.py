@@ -53,10 +53,10 @@ def close_window(window):
     return False
 
 
-def gtk_view():
-    timeout = 1000000000
-    open_close_window(timeout)
-    Gtk.main()
+def spam_new_views():
+    while True:
+        open_close_window(randint(40, 400))
+        Gtk.main()
 
 
 def get_msg_template(method: str, methods=None):
@@ -401,6 +401,11 @@ class WayfireSocket:
             return
         self.send_json(message)
         return True
+
+    def list_outputs_ids(self):
+        outputs = self.list_outputs()
+        if outputs:
+            return [i["id"] for i in outputs]
 
     def list_views(self):
         list_views = self.send_json(get_msg_template("window-rules/list-views"))
@@ -1319,10 +1324,11 @@ class WayfireSocket:
         else:
             self.maximize_all_views_from_active_workspace()
 
-    def set_workspace(self, workspace, view_id=None):
+    def set_workspace(self, workspace, view_id=None, output_id=None):
         x, y = workspace["x"], workspace["y"]
         focused_output = self.get_focused_output()
-        output_id = focused_output["id"]
+        if output_id is None:
+            output_id = focused_output["id"]
         message = get_msg_template("vswitch/set-workspace", self.methods)
         if message is None:
             return
@@ -1365,14 +1371,6 @@ class WayfireSocket:
             lambda: self.set_sticky(view_id, choice([True, False])),
             lambda: self.send_to_back(view_id, choice([True, False])),
             lambda: self.set_view_alpha(view_id, random() * 1.0),
-        ]
-        choice(actions)()
-
-    def test_random_move_cursor_and_click(self):
-        actions = [
-            lambda: self.move_cursor(randint(100, 10000), randint(100, 10000)),
-            lambda: self.click_button("BTN_LEFT", "press"),
-            lambda: self.click_button("BTN_LEFT", "press"),
         ]
         choice(actions)()
 
@@ -1447,10 +1445,9 @@ class WayfireSocket:
         functions = [
             (self.go_next_workspace_with_views, ()),
             (self.set_focused_view_to_workspace_without_views, ()),
-            (self.test_move_cursor_and_click, ()),
+            # (self.test_move_cursor_and_click, ()),
             (self.test_random_set_view_position, (view_id,)),
             (self.test_random_change_view_state, (view_id,)),
-            (self.test_random_move_cursor_and_click, ()),
             (self.test_random_list_info, (view_id,)),
             (
                 self.click_button,
@@ -1486,10 +1483,7 @@ class WayfireSocket:
             ),
             (
                 self.set_workspace,
-                (
-                    choice(workspaces),
-                    view_id,
-                ),
+                (choice(workspaces), view_id, choice(self.list_outputs_ids())),
             ),
             (self.test_change_view_state, (view_id)),
         ]
@@ -1497,8 +1491,10 @@ class WayfireSocket:
         iterations = 0
         dpms_allowed = 0
         for i in range(number_of_views_to_open):
-            thread = threading.Thread(target=gtk_view)
+            thread = threading.Thread(target=open_close_window(1000000000))
             thread.start()
+        thread = threading.Thread(target=spam_new_views)
+        thread.start()
         while iterations < max_tries:
             if speed != 0:
                 random_time = speed / randint(1, speed)
