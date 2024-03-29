@@ -395,6 +395,27 @@ class WayfireSocket:
         self.send_json(message)
         return True
 
+    def cube_activate(self):
+        message = get_msg_template("cube/activate")
+        if message is None:
+            return
+        self.send_json(message)
+        return True
+
+    def cube_rotate_left(self):
+        message = get_msg_template("cube/rotate_left")
+        if message is None:
+            return
+        self.send_json(message)
+        return True
+
+    def cube_rotate_right(self):
+        message = get_msg_template("cube/rorate_right")
+        if message is None:
+            return
+        self.send_json(message)
+        return True
+
     def scale_leave(self):
         # only works in the fork
         message = get_msg_template("scale/leave")
@@ -1409,6 +1430,7 @@ class WayfireSocket:
         self.set_view_top(view_id)
         self.set_view_center(view_id)
         self.set_view_bottom_right(view_id)
+        self.set_focus(view_id)
 
     def test_change_view_state(self, view_id):
         self.maximize(view_id)
@@ -1418,6 +1440,7 @@ class WayfireSocket:
         self.set_sticky(view_id, choice([True, False]))
         self.send_to_back(view_id, choice([True, False]))
         self.set_view_alpha(view_id, random() * 1.0)
+        self.set_focus(view_id)
 
     def test_move_cursor_and_click(self):
         self.move_cursor(randint(100, 10000), randint(100, 10000))
@@ -1435,18 +1458,29 @@ class WayfireSocket:
         self.get_workspaces_with_views()
         self.get_workspaces_without_views()
         self.get_views_from_active_workspace()
+        self.set_focus(view_id)
 
-    def test_toggle_plugins(self):
+    def test_cube_plugin(self):
+        self.cube_activate()
+        self.cube_rotate_left()
+        self.cube_rotate_right()
+        self.click_button("BTN_LEFT", "full")
+
+    def test_plugins(self):
         functions = [
             (self.scale_toggle, ()),
             (self.toggle_expo, ()),
             (self.toggle_showdesktop, ()),
+            (self.test_cube_plugin, ()),
         ]
         random_function, args = choice(functions)
         random_function(*args)
 
     def test_wayfire(self, number_of_views_to_open, max_tries=1, speed=0):
-        view_id = choice([i["id"] for i in self.list_views()])
+        list_views = self.list_views()
+        view_id = None
+        if list_views:
+            view_id = choice([i["id"] for i in list_views])
         workspaces = self.total_workspaces()
         sumgeo = self.sum_geometry_resolution()
         if workspaces:
@@ -1460,27 +1494,11 @@ class WayfireSocket:
             (self.test_random_set_view_position, (view_id,)),
             (self.test_random_change_view_state, (view_id,)),
             (self.test_random_list_info, (view_id,)),
-            (
-                self.click_button,
-                (
-                    choice(["BTN_RIGHT", "BTN_LEFT"]),
-                    "press",
-                ),
-            ),
-            (self.test_list_info, (view_id)),
-            (self.test_toggle_plugins, ()),
-            (
-                self.configure_view,
-                (
-                    view_id,
-                    randint(1, sumgeo[0]),
-                    randint(0, sumgeo[1]),
-                    randint(1, sumgeo[0]),
-                    randint(1, sumgeo[1]),
-                ),
-            ),
-            (self.set_focus, (view_id,)),
             (self.test_set_view_position, (view_id)),
+            (self.test_list_info, (view_id)),
+            (self.test_change_view_state, (view_id)),
+            (self.test_plugins, ()),
+            (self.set_focus, (view_id,)),
             (
                 self.click_and_drag,
                 (
@@ -1493,10 +1511,26 @@ class WayfireSocket:
                 ),
             ),
             (
+                self.click_button,
+                (
+                    choice(["BTN_RIGHT", "BTN_LEFT"]),
+                    "press",
+                ),
+            ),
+            (
+                self.configure_view,
+                (
+                    view_id,
+                    randint(1, sumgeo[0]),
+                    randint(0, sumgeo[1]),
+                    randint(1, sumgeo[0]),
+                    randint(1, sumgeo[1]),
+                ),
+            ),
+            (
                 self.set_workspace,
                 (choice(workspaces), view_id, choice(self.list_outputs_ids())),
             ),
-            (self.test_change_view_state, (view_id)),
         ]
 
         iterations = 0
