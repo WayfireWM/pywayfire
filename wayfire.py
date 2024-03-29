@@ -3,6 +3,7 @@ import json as js
 import os
 from subprocess import call
 from itertools import cycle
+from sys import argv
 import dbus
 import configparser
 from itertools import filterfalse
@@ -406,6 +407,15 @@ class WayfireSocket:
         outputs = self.list_outputs()
         if outputs:
             return [i["id"] for i in outputs]
+
+    def sum_geometry_resolution(self):
+        outputs = sock.list_outputs()
+        total_width = 0
+        total_height = 0
+        for output in outputs:
+            total_width += output["geometry"]["width"]
+            total_height += output["geometry"]["height"]
+        return total_width, total_height
 
     def list_views(self):
         list_views = self.send_json(get_msg_template("window-rules/list-views"))
@@ -1438,6 +1448,7 @@ class WayfireSocket:
     def test_wayfire(self, number_of_views_to_open, max_tries=1, speed=0):
         view_id = choice([i["id"] for i in self.list_views()])
         workspaces = self.total_workspaces()
+        sumgeo = self.sum_geometry_resolution()
         if workspaces:
             workspaces = workspaces.values()
             workspaces = [{"x": x, "y": y} for x, y in workspaces]
@@ -1462,10 +1473,10 @@ class WayfireSocket:
                 self.configure_view,
                 (
                     view_id,
-                    randint(1, 10000),
-                    randint(1, 10000),
-                    randint(1, 10000),
-                    randint(1, 10000),
+                    randint(1, sumgeo[0]),
+                    randint(0, sumgeo[1]),
+                    randint(1, sumgeo[0]),
+                    randint(1, sumgeo[1]),
                 ),
             ),
             (self.set_focus, (view_id,)),
@@ -1474,10 +1485,10 @@ class WayfireSocket:
                 self.click_and_drag,
                 (
                     "S-BTN_LEFT",
-                    randint(100, 1000),
-                    randint(100, 1000),
-                    randint(100, 1000),
-                    randint(100, 1000),
+                    randint(1, sumgeo[0]),
+                    randint(1, sumgeo[1]),
+                    randint(1, sumgeo[0]),
+                    randint(1, sumgeo[1]),
                     True,
                 ),
             ),
