@@ -1501,7 +1501,7 @@ class WayfireSocket:
         functions = [
             (self.go_next_workspace_with_views, ()),
             (self.set_focused_view_to_workspace_without_views, ()),
-            # (self.test_move_cursor_and_click, ()),
+            (self.test_move_cursor_and_click, ()),
             (self.test_random_set_view_position, (view_id,)),
             (self.test_random_change_view_state, (view_id,)),
             (self.test_random_list_info, (view_id,)),
@@ -1522,11 +1522,11 @@ class WayfireSocket:
                 ),
             ),
             (
-                # self.click_button,
-                # (
-                #    choice(["BTN_RIGHT", "BTN_LEFT"]),
-                #    "press",
-                # ),
+                self.click_button,
+                (
+                    choice(["BTN_RIGHT", "BTN_LEFT"]),
+                    "press",
+                ),
             ),
             (
                 self.configure_view,
