@@ -17,7 +17,7 @@ python3 -m pip install .
 ### Usage examples
 
 ```
-from wayfire import sock
+from wayfire.ipc import sock
 ```
 
 #### Get focused window info
