@@ -1,1 +1,7 @@
+clean() {
+    rm -rf __pycache__  wayfire/__pycache__ wayfire.egg-info/ build/ 
+}
+
+clean
 python3 -m pip install .
+clean
