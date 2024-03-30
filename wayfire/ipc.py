@@ -1,14 +1,17 @@
 import socket
 import json as js
 import os
-from subprocess import call
+from subprocess import call, Popen, PIPE
 from itertools import cycle
 import dbus
 import configparser
 from itertools import filterfalse
 import time
-from random import randint, choice, random
+from random import randint, choice, random, uniform
 import threading
+import psutil
+import signal
+from datetime import datetime
 
 
 def get_msg_template(method: str, methods=None):
@@ -72,6 +75,7 @@ class WayfireSocket:
             self.client.connect(socket_name)
         # initialize it once for performance in some cases
         self.methods = self.list_methods()
+        self.socket_name = socket_name
 
     def read_exact(self, n):
         response = bytes()
@@ -1438,8 +1442,51 @@ class WayfireSocket:
         time.sleep(10)
         self.dpms("on")
 
+    def test_is_terminal_available(self, terminal):
+        try:
+            Popen(["which", terminal], stdout=PIPE, stderr=PIPE)
+            return True
+        except FileNotFoundError:
+            return False
+
+    def test_choose_terminal(self):
+        # we give preference for xterm because it's a xwayland app
+        # and xwayland is mostly producing bugs
+        terminals = [
+            "xterm",
+            "rxvt",
+            "rxvt-unicode",
+            "lxterminal",
+            "eterm",
+            "roxterm",
+            "mlterm",
+            "sakura",
+            "aterm",
+            "xfce4-terminal",
+            "mlterm",
+            "stterm",
+            "konsole",
+            "gnome-terminal",
+            "mate-terminal",
+            "terminology",
+            "terminator",
+            "tilda",
+            "tilix",
+            "alacritty",
+            "kitty",
+            "foot",
+            "cool-retro-term",
+            "deepin-terminal",
+            "rxvt-unicode-256color",
+            "pantheon-terminal",
+        ]
+        for terminal in terminals:
+            if self.test_is_terminal_available(terminal):
+                return terminal
+        return None
+
     def test_wayfire(self, number_of_views_to_open, max_tries=1, speed=0):
-        from wayfire.tests.gtk4_window import spam_new_views, open_new_view
+        from wayfire.tests.gtk3_window import spam_new_views
 
         list_views = self.list_views()
         view_id = None
@@ -1499,10 +1546,12 @@ class WayfireSocket:
 
         iterations = 0
         dpms_allowed = 0
-        # lets keep those views open for some time
-        for i in range(number_of_views_to_open):
-            thread = threading.Thread(target=open_new_view, args=(1000000000))
-            thread.start()
+
+        # open some views
+        chosen_terminal = self.test_choose_terminal()
+        if chosen_terminal:
+            for i in range(number_of_views_to_open):
+                Popen([chosen_terminal])
 
         # now spam views
         thread = threading.Thread(target=spam_new_views)
