@@ -1561,21 +1561,6 @@ class WayfireSocket:
         if os.path.exists(results_file):
             with open(results_file, "w"):
                 pass
-        # Write the necessary imports at the beginning of the file
-        with open(results_file, "a") as file:
-            file.write("import socket\n")
-            file.write("import json as js\n")
-            file.write("import os\n")
-            file.write("from subprocess import call\n")
-            file.write("from itertools import cycle\n")
-            file.write("from sys import argv\n")
-            file.write("import dbus\n")
-            file.write("import configparser\n")
-            file.write("from itertools import filterfalse\n")
-            file.write("import time\n")
-            file.write("from random import randint, choice, random\n")
-            file.write("import threading\n")
-            file.write("\n")
 
         while iterations < max_tries:
             if speed != 0:
