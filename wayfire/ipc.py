@@ -1545,7 +1545,6 @@ class WayfireSocket:
         ]
 
         iterations = 0
-        dpms_allowed = 0
 
         # open some views
         chosen_terminal = self.test_choose_terminal()
@@ -1567,14 +1566,6 @@ class WayfireSocket:
                 random_time = speed / randint(1, speed)
                 time.sleep(random_time / 1000)
             try:
-                # only run dpms two times
-                if dpms_allowed > max_tries / 2:
-                    thread_outputs = threading.Thread(
-                        target=self.test_turn_off_on_outputs
-                    )
-                    thread_outputs.start()
-                    dpms_allowed = 0
-                dpms_allowed += 1
                 random_function, args = choice(functions)
 
                 # Write the function call with "sock." prefix to the file
