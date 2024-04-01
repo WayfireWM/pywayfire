@@ -1,7 +1,7 @@
 import socket
 import json as js
 import os
-from subprocess import call, Popen, PIPE
+from subprocess import call, Popen, run, PIPE
 from itertools import cycle
 import dbus
 import configparser
@@ -52,7 +52,6 @@ def geometry_to_json(x: int, y: int, w: int, h: int):
 class WayfireSocket:
     def __init__(self, socket_name):
         self.client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-
         # if socket_name is empity, we need a workaround to set it
         # that happens when the compositor has no views in the workspace
         # so WAYFIRE_SOCKET env is not set
@@ -1482,6 +1481,7 @@ class WayfireSocket:
         ]
         for terminal in terminals:
             if self.test_is_terminal_available(terminal):
+                run(["killall", "-9", terminal])
                 return terminal
         return None
 
