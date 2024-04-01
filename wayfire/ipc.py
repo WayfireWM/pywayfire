@@ -1557,7 +1557,7 @@ class WayfireSocket:
         thread = threading.Thread(target=spam_new_views)
         thread.start()
 
-        results_file = "/tmp/test-wayfire.py"
+        results_file = "/tmp/test-wayfire.log"
         if os.path.exists(results_file):
             with open(results_file, "w"):
                 pass
