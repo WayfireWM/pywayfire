@@ -1536,9 +1536,12 @@ class WayfireSocket:
         self.set_focus(view_id)
 
     def test_move_cursor_and_click(self):
-        self.move_cursor(randint(100, 10000), randint(100, 10000))
+        sumgeo = self.sum_geometry_resolution()
+        self.move_cursor(randint(100, sumgeo[0]), randint(100, sumgeo[1]))
         self.click_button("BTN_LEFT", "press")
         self.click_button("BTN_LEFT", "press")
+        self.click_button("BTN_RIGHT", "press")
+        self.click_button("BTN_RIGHT", "press")
 
     def test_list_info(self, view_id):
         self.list_outputs()
@@ -1559,12 +1562,17 @@ class WayfireSocket:
         self.cube_rotate_right()
         self.click_button("BTN_LEFT", "full")
 
+    def test_toggle_switcher_view(self):
+        for i in range(4):
+            self.press_key("A-KEY_TAB")
+
     def test_plugins(self):
         functions = [
             (self.scale_toggle, ()),
             (self.toggle_expo, ()),
             (self.toggle_showdesktop, ()),
             (self.test_cube_plugin, ()),
+            (self.test_toggle_switcher_view, ()),
             # (self.reload_plugins, ()),
         ]
         random_function, args = choice(functions)
@@ -1583,10 +1591,9 @@ class WayfireSocket:
             return False
 
     def test_choose_terminal(self):
-        # we give preference for xterm because it's a xwayland app
-        # and xwayland is mostly producing bugs
         terminals = [
             "xterm",
+            "kitty",
             "rxvt",
             "rxvt-unicode",
             "lxterminal",
@@ -1606,7 +1613,6 @@ class WayfireSocket:
             "tilda",
             "tilix",
             "alacritty",
-            "kitty",
             "foot",
             "cool-retro-term",
             "deepin-terminal",
@@ -1618,6 +1624,12 @@ class WayfireSocket:
                 run(["killall", "-9", terminal])
                 return terminal
         return None
+
+    def test_spam_terminals(self, number_of_views_to_open):
+        chosen_terminal = self.test_choose_terminal()
+        if chosen_terminal:
+            for _ in range(number_of_views_to_open):
+                Popen([chosen_terminal])
 
     def test_set_function_priority(self, functions):
         priority = []
@@ -1684,11 +1696,7 @@ class WayfireSocket:
 
         iterations = 0
 
-        # Open some views
-        chosen_terminal = self.test_choose_terminal()
-        if chosen_terminal:
-            for _ in range(number_of_views_to_open):
-                Popen([chosen_terminal])
+        self.test_spam_terminals(number_of_views_to_open)
 
         # Start spamming views
         thread = threading.Thread(target=spam_new_views)
@@ -1714,7 +1722,7 @@ class WayfireSocket:
 
             try:
                 # Repeat certain functions every N iterations
-                if should_execute_function_priority > 10:
+                if should_execute_function_priority > 2:
                     for func, args in func_priority:
                         print(args)
                         func(*args)
@@ -1722,7 +1730,7 @@ class WayfireSocket:
 
                 should_execute_function_priority += 1
 
-                if should_change_function_priority > 100:
+                if should_change_function_priority > 400:
                     func_priority = self.test_set_function_priority(functions)
                     should_execute_function_priority = 0
 
