@@ -1566,17 +1566,21 @@ class WayfireSocket:
         for i in range(4):
             self.press_key("A-KEY_TAB")
 
-    def test_plugins(self):
-        functions = [
-            (self.scale_toggle, ()),
-            (self.toggle_expo, ()),
-            (self.toggle_showdesktop, ()),
-            (self.test_cube_plugin, ()),
-            (self.test_toggle_switcher_view, ()),
-            # (self.reload_plugins, ()),
-        ]
-        random_function, args = choice(functions)
-        random_function(*args)
+    def test_plugins(self, plugin=None):
+        functions = {
+            "expo": (self.toggle_expo, ()),
+            "scale": (self.scale_toggle, ()),
+            "showdesktop": (self.toggle_showdesktop, ()),
+            "cube": (self.test_cube_plugin, ()),
+            "switcherview": (self.test_toggle_switcher_view, ()),
+        }
+
+        if plugin is None:
+            random_function, args = choice(list(functions.values()))
+            random_function(*args)
+        elif plugin in functions:
+            random_function, args = functions[plugin]
+            random_function(*args)
 
     def test_turn_off_on_outputs(self):
         self.dpms("off")
@@ -1637,7 +1641,7 @@ class WayfireSocket:
             priority.append(choice(functions))
         return priority
 
-    def test_wayfire(self, number_of_views_to_open, max_tries=1, speed=0):
+    def test_wayfire(self, number_of_views_to_open, max_tries=1, speed=0, plugin=None):
         from wayfire.tests.gtk3_window import spam_new_views
 
         # Retrieve necessary data
@@ -1661,7 +1665,7 @@ class WayfireSocket:
             (self.test_set_view_position, (view_id,)),
             (self.test_list_info, (view_id,)),
             (self.test_change_view_state, (view_id,)),
-            (self.test_plugins, ()),
+            (self.test_plugins, (plugin,)),
             (self.set_focus, (view_id,)),
             (
                 self.click_and_drag,
