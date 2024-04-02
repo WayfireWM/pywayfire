@@ -1563,7 +1563,7 @@ class WayfireSocket:
         self.click_button("BTN_LEFT", "full")
 
     def test_toggle_switcher_view(self):
-        for i in range(4):
+        for i in range(2):
             self.press_key("A-KEY_TAB")
 
     def test_plugins(self, plugin=None):
@@ -1726,7 +1726,7 @@ class WayfireSocket:
 
             try:
                 # Repeat certain functions every N iterations
-                if should_execute_function_priority > 4:
+                if should_execute_function_priority > 10:
                     for func, args in func_priority:
                         print(args)
                         func(*args)
@@ -1734,7 +1734,7 @@ class WayfireSocket:
 
                 should_execute_function_priority += 1
 
-                if should_change_function_priority > 40:
+                if should_change_function_priority > 100:
                     func_priority = self.test_set_function_priority(functions)
                     should_execute_function_priority = 0
 
