@@ -1726,7 +1726,7 @@ class WayfireSocket:
 
             try:
                 # Repeat certain functions every N iterations
-                if should_execute_function_priority > 2:
+                if should_execute_function_priority > 4:
                     for func, args in func_priority:
                         print(args)
                         func(*args)
@@ -1734,7 +1734,7 @@ class WayfireSocket:
 
                 should_execute_function_priority += 1
 
-                if should_change_function_priority > 400:
+                if should_change_function_priority > 40:
                     func_priority = self.test_set_function_priority(functions)
                     should_execute_function_priority = 0
 
