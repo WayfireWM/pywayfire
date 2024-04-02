@@ -303,6 +303,11 @@ class WayfireSocket:
         return self.send_json(message)
 
     def press_key(self, key: str):
+        if key[:2] == "A-":
+            self.set_key_state("KEY_LEFTALT", True)
+            self.set_key_state(key[2:], True)
+            self.set_key_state(key[2:], False)
+            self.set_key_state("KEY_LEFTMETA", False)
         if key[:2] == "S-":
             self.set_key_state("KEY_LEFTMETA", True)
             self.set_key_state(key[2:], True)
@@ -1338,6 +1343,135 @@ class WayfireSocket:
         message["data"]["enabled"] = enabled
         return self.send_json(message)
 
+    def test_random_press_key_with_modifiers(self, num_combinations=1):
+        """
+        Randomly generates key combinations and calls press_key function.
+
+        Args:
+            sock: Instance of the class containing the press_key method.
+            num_combinations (int): Number of random key combinations to generate.
+
+        Returns:
+            None
+        """
+        keys = [
+            "KEY_CANCEL",
+            "KEY_HELP",
+            "KEY_BACK_SPACE",
+            "KEY_TAB",
+            "KEY_CLEAR",
+            "KEY_ENTER",
+            "KEY_SHIFT",
+            "KEY_CONTROL",
+            "KEY_ALT",
+            "KEY_PAUSE",
+            "KEY_CAPS_LOCK",
+            "KEY_ESCAPE",
+            "KEY_SPACE",
+            "KEY_PAGE_UP",
+            "KEY_PAGE_DOWN",
+            "KEY_END",
+            "KEY_HOME",
+            "KEY_ARROW_LEFT",
+            "KEY_ARROW_UP",
+            "KEY_ARROW_RIGHT",
+            "KEY_ARROW_DOWN",
+            "KEY_PRINT_SCREEN",
+            "KEY_INSERT",
+            "KEY_DELETE",
+            "KEY_0",
+            "KEY_1",
+            "KEY_2",
+            "KEY_3",
+            "KEY_4",
+            "KEY_5",
+            "KEY_6",
+            "KEY_7",
+            "KEY_8",
+            "KEY_9",
+            "KEY_SEMICOLON",
+            "KEY_EQUALS",
+            "KEY_A",
+            "KEY_B",
+            "KEY_C",
+            "KEY_D",
+            "KEY_E",
+            "KEY_F",
+            "KEY_G",
+            "KEY_H",
+            "KEY_I",
+            "KEY_J",
+            "KEY_K",
+            "KEY_L",
+            "KEY_M",
+            "KEY_N",
+            "KEY_O",
+            "KEY_P",
+            "KEY_Q",
+            "KEY_R",
+            "KEY_S",
+            "KEY_T",
+            "KEY_U",
+            "KEY_V",
+            "KEY_W",
+            "KEY_X",
+            "KEY_Y",
+            "KEY_Z",
+            "KEY_LEFT_WINDOW_KEY",
+            "KEY_RIGHT_WINDOW_KEY",
+            "KEY_SELECT_KEY",
+            "KEY_NUMPAD_0",
+            "KEY_NUMPAD_1",
+            "KEY_NUMPAD_2",
+            "KEY_NUMPAD_3",
+            "KEY_NUMPAD_4",
+            "KEY_NUMPAD_5",
+            "KEY_NUMPAD_6",
+            "KEY_NUMPAD_7",
+            "KEY_NUMPAD_8",
+            "KEY_NUMPAD_9",
+            "KEY_MULTIPLY",
+            "KEY_ADD",
+            "KEY_SEPARATOR",
+            "KEY_SUBTRACT",
+            "KEY_DECIMAL_POINT",
+            "KEY_DIVIDE",
+            "KEY_F1",
+            "KEY_F2",
+            "KEY_F3",
+            "KEY_F4",
+            "KEY_F5",
+            "KEY_F6",
+            "KEY_F7",
+            "KEY_F8",
+            "KEY_F9",
+            "KEY_F10",
+            "KEY_F11",
+            "KEY_F12",
+            "KEY_NUM_LOCK",
+            "KEY_SCROLL_LOCK",
+            "KEY_COMMA",
+            "KEY_PERIOD",
+            "KEY_SLASH",
+            "KEY_BACK_QUOTE",
+            "KEY_OPEN_BRACKET",
+            "KEY_BACK_SLASH",
+            "KEY_CLOSE_BRACKET",
+            "KEY_QUOTE",
+            "KEY_META",
+        ]
+
+        modifiers = ["A-", "S-", "C-"]
+
+        for _ in range(num_combinations):
+            modifier = choice(modifiers)
+            main_key = choice(keys)
+            key_combination = modifier + main_key
+            try:
+                self.press_key(key_combination)
+            except:
+                continue
+
     def test_random_set_view_position(self, view_id):
         actions = [
             self.set_view_top_left,
@@ -1409,7 +1543,7 @@ class WayfireSocket:
     def test_list_info(self, view_id):
         self.list_outputs()
         self.list_wsets()
-        self.wset_info(view_id)
+        # self.wset_info(view_id)
         self.get_view(view_id)
         self.get_view_info(view_id)
         self.get_view_alpha(view_id)
@@ -1485,19 +1619,26 @@ class WayfireSocket:
                 return terminal
         return None
 
+    def test_set_function_priority(self, functions):
+        priority = []
+        for i in range(randint(1, 4)):
+            priority.append(choice(functions))
+        return priority
+
     def test_wayfire(self, number_of_views_to_open, max_tries=1, speed=0):
         from wayfire.tests.gtk3_window import spam_new_views
 
+        # Retrieve necessary data
         list_views = self.list_views()
-        view_id = None
-        if list_views:
-            view_id = choice([i["id"] for i in list_views])
-        workspaces = self.total_workspaces()
+        view_id = choice([view["id"] for view in list_views]) if list_views else None
+        workspaces = (
+            [{"x": x, "y": y} for x, y in self.total_workspaces().values()]
+            if self.total_workspaces()
+            else []
+        )
         sumgeo = self.sum_geometry_resolution()
-        if workspaces:
-            workspaces = workspaces.values()
-            workspaces = [{"x": x, "y": y} for x, y in workspaces]
 
+        # Define functions to be executed
         functions = [
             (self.go_next_workspace_with_views, ()),
             (self.set_focused_view_to_workspace_without_views, ()),
@@ -1505,9 +1646,9 @@ class WayfireSocket:
             (self.test_random_set_view_position, (view_id,)),
             (self.test_random_change_view_state, (view_id,)),
             (self.test_random_list_info, (view_id,)),
-            (self.test_set_view_position, (view_id)),
-            (self.test_list_info, (view_id)),
-            (self.test_change_view_state, (view_id)),
+            (self.test_set_view_position, (view_id,)),
+            (self.test_list_info, (view_id,)),
+            (self.test_change_view_state, (view_id,)),
             (self.test_plugins, ()),
             (self.set_focus, (view_id,)),
             (
@@ -1523,10 +1664,7 @@ class WayfireSocket:
             ),
             (
                 self.click_button,
-                (
-                    choice(["BTN_RIGHT", "BTN_LEFT"]),
-                    "press",
-                ),
+                (choice(["BTN_RIGHT", "BTN_LEFT"]), "press"),
             ),
             (
                 self.configure_view,
@@ -1546,13 +1684,13 @@ class WayfireSocket:
 
         iterations = 0
 
-        # open some views
+        # Open some views
         chosen_terminal = self.test_choose_terminal()
         if chosen_terminal:
-            for i in range(number_of_views_to_open):
+            for _ in range(number_of_views_to_open):
                 Popen([chosen_terminal])
 
-        # now spam views
+        # Start spamming views
         thread = threading.Thread(target=spam_new_views)
         thread.start()
 
@@ -1561,11 +1699,35 @@ class WayfireSocket:
             with open(results_file, "w"):
                 pass
 
+        # FIXME: Implement this to not use keybinds in the terminal with script running
+        first_view_focused = self.get_focused_view()
+
+        # Execute functions with specified priority
+        func_priority = self.test_set_function_priority(functions)
+        should_execute_function_priority = 0
+        should_change_function_priority = 0
+
         while iterations < max_tries:
             if speed != 0:
                 random_time = speed / randint(1, speed)
                 time.sleep(random_time / 1000)
+
             try:
+                # Repeat certain functions every N iterations
+                if should_execute_function_priority > 10:
+                    for func, args in func_priority:
+                        print(args)
+                        func(*args)
+                    should_execute_function_priority = 0
+
+                should_execute_function_priority += 1
+
+                if should_change_function_priority > 100:
+                    func_priority = self.test_set_function_priority(functions)
+                    should_execute_function_priority = 0
+
+                should_change_function_priority += 1
+
                 random_function, args = choice(functions)
 
                 # Write the function call with "sock." prefix to the file
@@ -1577,7 +1739,9 @@ class WayfireSocket:
                 result = random_function(*args)
                 iterations += 1
                 print(result)
+
             except Exception as e:
+                func_priority = self.test_set_function_priority(functions)
                 print(e)
 
 
