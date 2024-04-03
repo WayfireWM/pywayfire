@@ -14,6 +14,17 @@ import signal
 from datetime import datetime
 
 
+def check_geometry(x: int, y: int, width: int, height: int, obj) -> bool:
+    if (
+        obj["x"] == x
+        and obj["y"] == y
+        and obj["width"] == width
+        and obj["height"] == height
+    ):
+        return True
+    return False
+
+
 def get_msg_template(method: str, methods=None):
     plugin = None
     # just in case there is a unknow situation where the method has no plugin
@@ -94,6 +105,107 @@ class WayfireSocket:
         if "error" in response:
             raise Exception(response["error"])
         return response
+
+    def create_wayland_output(self):
+        message = get_msg_template("stipc/create_wayland_output", self.methods)
+        self.send_json(message)
+
+    def layout_views(self, layout):
+        views = self.list_views()
+        method = "stipc/layout_views"
+        message = get_msg_template(method, self.methods)
+        msg_layout = []
+
+        for ident in layout:
+            x, y, w, h = layout[ident][:4]
+            for v in views:
+                if v["app-id"] == ident or v["title"] == ident or v["id"] == ident:
+                    layout_for_view = {
+                        "id": v["id"],
+                        "x": x,
+                        "y": y,
+                        "width": w,
+                        "height": h,
+                    }
+                    if len(layout[ident]) == 5:
+                        layout_for_view["output"] = layout[ident][-1]
+                    msg_layout.append(layout_for_view)
+
+        message["data"]["views"] = msg_layout
+        return self.send_json(message)
+
+    def set_touch(self, id: int, x: int, y: int):
+        method = "stipc/touch"
+        message = get_msg_template(method, self.methods)
+        message["data"]["finger"] = id
+        message["data"]["x"] = x
+        message["data"]["y"] = y
+        return self.send_json(message)
+
+    def tablet_tool_proximity(self, x, y, prox_in):
+        method = "stipc/tablet/tool_proximity"
+        message = get_msg_template(method, self.methods)
+        message["data"]["x"] = x
+        message["data"]["y"] = y
+        message["data"]["proximity_in"] = prox_in
+        return self.send_json(message)
+
+    def tablet_tool_tip(self, x, y, state):
+        method = "stipc/tablet/tool_tip"
+        message = get_msg_template(method, self.methods)
+        message["data"]["x"] = x
+        message["data"]["y"] = y
+        message["data"]["state"] = state
+        return self.send_json(message)
+
+    def tablet_tool_axis(self, x, y, pressure):
+        method = "stipc/tablet/tool_axis"
+        message = get_msg_template(method, self.methods)
+        message["data"]["x"] = x
+        message["data"]["y"] = y
+        message["data"]["pressure"] = pressure
+        return self.send_json(message)
+
+    def tablet_tool_button(self, btn, state):
+        method = "stipc/tablet/tool_button"
+        message = get_msg_template(method, self.methods)
+        message["data"]["button"] = btn
+        message["data"]["state"] = state
+        return self.send_json(message)
+
+    def tablet_pad_button(self, btn, state):
+        method = "stipc/tablet/pad_button"
+        message = get_msg_template(method, self.methods)
+        message["data"]["button"] = btn
+        message["data"]["state"] = state
+        return self.send_json(message)
+
+    def release_touch(self, id: int):
+        method = "stipc/touch_release"
+        message = get_msg_template(method, self.methods)
+        message["data"]["finger"] = id
+        return self.send_json(message)
+
+    def destroy_wayland_output(self, output: str):
+        method = "stipc/destroy_wayland_output"
+        message = get_msg_template(method, self.methods)
+        message["data"]["output"] = output
+        return self.send_json(message)
+
+    def delay_next_tx(self):
+        method = "stipc/delay_next_tx"
+        message = get_msg_template(method, self.methods)
+        return self.send_json(message)
+
+    def xwayland_pid(self):
+        method = "stipc/get_xwayland_pid"
+        message = get_msg_template(method, self.methods)
+        return self.send_json(message)
+
+    def xwayland_display(self):
+        method = "stipc/get_xwayland_display"
+        message = get_msg_template(method, self.methods)
+        return self.send_json(message)
 
     def list_methods(self):
         query = get_msg_template("list-methods")
