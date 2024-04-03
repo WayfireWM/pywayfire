@@ -427,6 +427,9 @@ class WayfireSocket:
             if modifier in modifiers:
                 self.set_key_state(modifiers[modifier], True)
 
+        if timeout >= 1:
+            time.sleep(timeout / 1000)
+
         actual_key = key_combinations[-1]
         self.set_key_state(actual_key, True)
 
@@ -1642,14 +1645,18 @@ class WayfireSocket:
         self.set_focus(view_id)
 
     def test_change_view_state(self, view_id):
-        self.maximize(view_id)
-        self.set_fullscreen(view_id)
-        self.set_minimized(view_id, True)
-        self.set_minimized(view_id, False)
-        self.set_sticky(view_id, choice([True, False]))
-        self.send_to_back(view_id, choice([True, False]))
-        self.set_view_alpha(view_id, random() * 1.0)
-        self.set_focus(view_id)
+        functions = [
+            self.maximize,
+            self.set_fullscreen,
+            lambda view_id: self.set_minimized(view_id, choice([True, False])),
+            self.set_sticky,
+            self.send_to_back,
+            lambda view_id: self.set_view_alpha(view_id, random() * 1.0),
+            self.set_focus,
+        ]
+
+        random_function = choice(functions)
+        random_function(view_id)
 
     def test_move_cursor_and_click(self):
         sumgeo = self.sum_geometry_resolution()
@@ -1682,8 +1689,17 @@ class WayfireSocket:
         for i in range(2):
             self.press_key("A-KEY_TAB")
 
-    def test_window_rotate_plugin(self):
-        self.press_key("C-KEY_TAB")
+    def test_auto_rotate_plugin(self):
+        keys_combinations = [
+            "C-W-KEY_UP",
+            "C-W-KEY_LEFT",
+            "C-W-KEY_RIGHT",
+            "C-W-KEY_DOWN",
+        ]
+
+        for _ in range(len(keys_combinations)):
+            key_combination = choice(keys_combinations)
+            self.press_key(key_combination)
 
     def test_plugins(self, plugin=None):
         functions = {
@@ -1691,7 +1707,8 @@ class WayfireSocket:
             "scale": (self.scale_toggle, ()),
             "showdesktop": (self.toggle_showdesktop, ()),
             "cube": (self.test_cube_plugin, ()),
-            "switcherview": (self.test_toggle_switcher_view, ()),
+            "switcherview": (self.test_toggle_switcher_view_plugin, ()),
+            "autorotate": (self.test_auto_rotate_plugin, ()),
         }
 
         if plugin is None:
