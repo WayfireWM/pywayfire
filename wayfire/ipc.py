@@ -414,25 +414,30 @@ class WayfireSocket:
         message["data"]["cmd"] = cmd
         return self.send_json(message)
 
-    def press_key(self, key: str):
-        if key[:2] == "A-":
-            self.set_key_state("KEY_LEFTALT", True)
-            self.set_key_state(key[2:], True)
-            self.set_key_state(key[2:], False)
-            self.set_key_state("KEY_LEFTMETA", False)
-        if key[:2] == "S-":
-            self.set_key_state("KEY_LEFTMETA", True)
-            self.set_key_state(key[2:], True)
-            self.set_key_state(key[2:], False)
-            self.set_key_state("KEY_LEFTMETA", False)
-        elif key[:2] == "C-":
-            self.set_key_state("KEY_LEFTCTRL", True)
-            self.set_key_state(key[2:], True)
-            self.set_key_state(key[2:], False)
-            self.set_key_state("KEY_LEFTCTRL", False)
-        else:
-            self.set_key_state(key, True)
-            self.set_key_state(key, False)
+    def press_key(self, keys: str, timeout=0):
+        modifiers = {
+            "A": "KEY_LEFTALT",
+            "S": "KEY_LEFTSHIFT",
+            "C": "KEY_LEFTCTRL",
+            "W": "KEY_LEFTMETA",
+        }
+        key_combinations = keys.split("-")
+
+        for modifier in key_combinations[:-1]:
+            if modifier in modifiers:
+                self.set_key_state(modifiers[modifier], True)
+
+        actual_key = key_combinations[-1]
+        self.set_key_state(actual_key, True)
+
+        if timeout >= 1:
+            time.sleep(timeout / 1000)
+
+        self.set_key_state(actual_key, False)
+
+        for modifier in key_combinations[:-1]:
+            if modifier in modifiers:
+                self.set_key_state(modifiers[modifier], False)
 
     def toggle_showdesktop(self):
         message = get_msg_template("wm-actions/toggle_showdesktop", self.methods)
@@ -1673,9 +1678,12 @@ class WayfireSocket:
         self.cube_rotate_right()
         self.click_button("BTN_LEFT", "full")
 
-    def test_toggle_switcher_view(self):
+    def test_toggle_switcher_view_plugin(self):
         for i in range(2):
             self.press_key("A-KEY_TAB")
+
+    def test_window_rotate_plugin(self):
+        self.press_key("C-KEY_TAB")
 
     def test_plugins(self, plugin=None):
         functions = {
