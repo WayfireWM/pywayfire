@@ -1679,7 +1679,7 @@ class WayfireSocket:
             ),
             (
                 self.click_button,
-                (choice(["BTN_RIGHT", "BTN_LEFT"]), "press"),
+                (choice(["BTN_RIGHT", "BTN_LEFT"]), "full"),
             ),
             (
                 self.configure_view,
