@@ -1332,8 +1332,7 @@ class WayfireSocket:
         message["data"]["output-id"] = output_id
         if view_id is not None:
             message["data"]["view-id"] = view_id
-        self.send_json(message)
-        return True
+        return self.send_json(message)
 
     def configure_input_device(self, id, enabled: bool):
         message = get_msg_template("input/configure-device")
@@ -1538,10 +1537,10 @@ class WayfireSocket:
     def test_move_cursor_and_click(self):
         sumgeo = self.sum_geometry_resolution()
         self.move_cursor(randint(100, sumgeo[0]), randint(100, sumgeo[1]))
-        self.click_button("BTN_LEFT", "press")
-        self.click_button("BTN_LEFT", "press")
-        self.click_button("BTN_RIGHT", "press")
-        self.click_button("BTN_RIGHT", "press")
+        self.click_button("BTN_LEFT", "full")
+        self.click_button("BTN_LEFT", "full")
+        self.click_button("BTN_RIGHT", "full")
+        self.click_button("BTN_RIGHT", "full")
 
     def test_list_info(self, view_id):
         self.list_outputs()
@@ -1730,6 +1729,11 @@ class WayfireSocket:
                     for func, args in func_priority:
                         print(args)
                         func(*args)
+                        # Log the function call with its arguments to the file
+                        with open(results_file, "a") as file:
+                            file.write(
+                                f"sock.{func.__name__}({', '.join(map(repr, args))})\n"
+                            )
                     should_execute_function_priority = 0
 
                 should_execute_function_priority += 1
