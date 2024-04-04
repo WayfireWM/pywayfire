@@ -1666,6 +1666,20 @@ class WayfireSocket:
         self.click_button("BTN_RIGHT", "full")
         self.click_button("BTN_RIGHT", "full")
 
+    def test_move_cursor_and_drag_drop(self):
+        sumgeo = self.sum_geometry_resolution()
+        random_iterations = randint(1, 20)
+
+        for _ in range(random_iterations):
+            self.click_and_drag(
+                "S-BTN_LEFT",
+                randint(1, sumgeo[0]),
+                randint(1, sumgeo[1]),
+                randint(1, sumgeo[0]),
+                randint(1, sumgeo[1]),
+                True,
+            )
+
     def test_list_info(self, view_id):
         self.list_outputs()
         self.list_wsets()
@@ -1803,17 +1817,7 @@ class WayfireSocket:
             (self.test_change_view_state, (view_id,)),
             (self.test_plugins, (plugin,)),
             (self.set_focus, (view_id,)),
-            (
-                self.click_and_drag,
-                (
-                    "S-BTN_LEFT",
-                    randint(1, sumgeo[0]),
-                    randint(1, sumgeo[1]),
-                    randint(1, sumgeo[0]),
-                    randint(1, sumgeo[1]),
-                    True,
-                ),
-            ),
+            (self.test_move_cursor_and_drag_drop, ()),
             (
                 self.click_button,
                 (choice(["BTN_RIGHT", "BTN_LEFT"]), "full"),
