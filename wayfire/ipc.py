@@ -1700,7 +1700,7 @@ class WayfireSocket:
         self.click_button("BTN_LEFT", "full")
 
     def test_toggle_switcher_view_plugin(self):
-        for i in range(2):
+        for _ in range(2):
             self.press_key("A-KEY_TAB")
 
     def test_auto_rotate_plugin(self):
@@ -1715,6 +1715,41 @@ class WayfireSocket:
             key_combination = choice(keys_combinations)
             self.press_key(key_combination)
 
+    def test_invert_plugin(self):
+        for _ in range(2):
+            self.press_key("A-KEY_I")
+
+    def test_magnifier_plugin(self):
+        for _ in range(2):
+            self.press_key("A-W-KEY_M")
+
+    def test_focus_change_plugin(self):
+        for _ in range(2):
+            self.press_key("S-W-KEY_UP")
+            self.press_key("S-W-KEY_DOWN")
+            self.press_key("S-W-KEY_LEFT")
+            self.press_key("S-W-KEY_RIGHT")
+
+    def test_output_switcher_plugin(self):
+        for _ in range(2):
+            self.press_key("A-KEY_O")
+            self.press_key("A-S-KEY_O")
+
+    def test_low_priority_plugins(self, plugin=None):
+        functions = {
+            "invert": (self.test_invert_plugin, ()),
+            "focus-change": (self.test_focus_change_plugin, ()),
+            "magnifier": (self.test_magnifier_plugin, ()),
+            "output-switcher": (self.test_output_switcher_plugin, ()),
+        }
+
+        if plugin is None:
+            random_function, args = choice(list(functions.values()))
+            random_function(*args)
+        elif plugin in functions:
+            random_function, args = functions[plugin]
+            random_function(*args)
+
     def test_plugins(self, plugin=None):
         functions = {
             "expo": (self.toggle_expo, ()),
@@ -1723,6 +1758,7 @@ class WayfireSocket:
             "cube": (self.test_cube_plugin, ()),
             "switcherview": (self.test_toggle_switcher_view_plugin, ()),
             "autorotate": (self.test_auto_rotate_plugin, ()),
+            "invert": (self.test_invert_plugin, ()),
         }
 
         if plugin is None:
@@ -1791,6 +1827,11 @@ class WayfireSocket:
             priority.append(choice(functions))
         return priority
 
+    def random_delay_next_tx(self):
+        random_run = randint(1, 8)
+        if random_run > 4:
+            self.delay_next_tx()
+
     def test_wayfire(self, number_of_views_to_open, max_tries=1, speed=0, plugin=None):
         from wayfire.tests.gtk3_window import spam_new_views
 
@@ -1809,7 +1850,6 @@ class WayfireSocket:
             (self.go_next_workspace_with_views, ()),
             (self.set_focused_view_to_workspace_without_views, ()),
             (self.test_move_cursor_and_click, ()),
-            (self.delay_next_tx, ()),
             (self.test_random_set_view_position, (view_id,)),
             (self.test_random_change_view_state, (view_id,)),
             (self.test_random_list_info, (view_id,)),
@@ -1817,6 +1857,7 @@ class WayfireSocket:
             (self.test_list_info, (view_id,)),
             (self.test_change_view_state, (view_id,)),
             (self.test_plugins, (plugin,)),
+            (self.test_low_priority_plugins, (plugin,)),
             (self.set_focus, (view_id,)),
             (self.test_move_cursor_and_drag_drop, ()),
             (
@@ -1897,6 +1938,7 @@ class WayfireSocket:
                 result = random_function(*args)
                 iterations += 1
                 print(result)
+                self.random_delay_next_tx()
 
             except Exception as e:
                 func_priority = self.test_set_function_priority(functions)
