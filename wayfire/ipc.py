@@ -1830,7 +1830,8 @@ class WayfireSocket:
     def random_delay_next_tx(self):
         random_run = randint(1, 8)
         if random_run > 4:
-            self.delay_next_tx()
+            for _ in range(1, randint(2, 100)):
+                self.delay_next_tx()
 
     def test_wayfire(self, number_of_views_to_open, max_tries=1, speed=0, plugin=None):
         from wayfire.tests.gtk3_window import spam_new_views
