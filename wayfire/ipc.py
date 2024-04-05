@@ -1904,9 +1904,9 @@ class WayfireSocket:
 
             try:
                 # Repeat certain functions every N iterations
-                if should_execute_function_priority > 4:
+                if should_execute_function_priority > 10:
                     for func, args in func_priority:
-                        for _ in range(4):
+                        for _ in range(2):
                             result = func(*args)
                             print(result)
                     should_execute_function_priority = 0
