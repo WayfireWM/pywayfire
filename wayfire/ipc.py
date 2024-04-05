@@ -1889,11 +1889,6 @@ class WayfireSocket:
         thread = threading.Thread(target=spam_new_views)
         thread.start()
 
-        # results_file = "/tmp/test-wayfire.log"
-        # if os.path.exists(results_file):
-        #    with open(results_file, "w"):
-        #        pass
-
         # FIXME: Implement this to not use keybinds in the terminal with script running
         # first_view_focused = self.get_focused_view()
 
@@ -1909,15 +1904,11 @@ class WayfireSocket:
 
             try:
                 # Repeat certain functions every N iterations
-                if should_execute_function_priority > 10:
+                if should_execute_function_priority > 4:
                     for func, args in func_priority:
-                        result = func(*args)
-                        print(result)
-                        # Log the function call with its arguments to the file
-                        # with open(results_file, "a") as file:
-                        #    file.write(
-                        #        f"sock.{func.__name__}({', '.join(map(repr, args))})\n"
-                        #    )
+                        for _ in range(4):
+                            result = func(*args)
+                            print(result)
                     should_execute_function_priority = 0
 
                 should_execute_function_priority += 1
@@ -1929,12 +1920,6 @@ class WayfireSocket:
                 should_change_function_priority += 1
 
                 random_function, args = choice(functions)
-
-                # Write the function call with "sock." prefix to the file
-                # with open(results_file, "a") as file:
-                #    file.write(
-                #        f"sock.{random_function.__name__}({', '.join(map(repr, args))})\n"
-                #    )
 
                 result = random_function(*args)
                 iterations += 1
