@@ -1,17 +1,16 @@
 import socket
 import json as js
 import os
-from subprocess import call, Popen, run, PIPE
+from subprocess import call, Popen, check_output, run, PIPE
 from itertools import cycle
 import dbus
 import configparser
 from itertools import filterfalse
 import time
-from random import randint, choice, random, uniform
+from random import randint, choice, random
 import threading
 import psutil
-import signal
-from datetime import datetime
+import pkg_resources
 
 
 def check_geometry(x: int, y: int, width: int, height: int, obj) -> bool:
@@ -23,6 +22,21 @@ def check_geometry(x: int, y: int, width: int, height: int, obj) -> bool:
     ):
         return True
     return False
+
+
+def find_wayland_display(pid):
+    try:
+        process = psutil.Process(pid)
+        for fd in process.open_files():
+            if "wayland-" in fd.path:
+                display = fd.path.split("-")[-1]
+                if "." in display:
+                    display = display.split(".")[0]
+                return f"wayland-{display}"
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        pass
+
+    return None
 
 
 def get_msg_template(method: str, methods=None):
@@ -62,7 +76,7 @@ def geometry_to_json(x: int, y: int, w: int, h: int):
 
 class WayfireSocket:
     def __init__(self, socket_name):
-        self.client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.client = None
         # if socket_name is empity, we need a workaround to set it
         # that happens when the compositor has no views in the workspace
         # so WAYFIRE_SOCKET env is not set
@@ -77,15 +91,19 @@ class WayfireSocket:
             )
             for sock in socket_list:
                 try:
-                    self.client.connect(sock)
+                    self.connect_client(sock)
                     break
                 except Exception as e:
                     print(e)
         else:
-            self.client.connect(socket_name)
-        # initialize it once for performance in some cases
-        self.methods = self.list_methods()
-        self.socket_name = socket_name
+            # initialize it once for performance in some cases
+            self.connect_client(socket_name)
+            self.methods = self.list_methods()
+            self.socket_name = socket_name
+
+    def connect_client(self, socket_name):
+        self.client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.client.connect(socket_name)
 
     def read_exact(self, n):
         response = bytes()
@@ -1462,6 +1480,26 @@ class WayfireSocket:
         message["data"]["enabled"] = enabled
         return self.send_json(message)
 
+    def start_nested_wayfire(self, wayfire_ini=None, cmd=None):
+        if wayfire_ini is None:
+            module_dir = pkg_resources.resource_filename(__name__, "")
+            wayfire_ini = os.path.join(module_dir, "tests/wayfire.ini")
+        elif not os.path.isabs(wayfire_ini):
+            # If wayfire_ini is provided but not an absolute path, assume it's relative to the current directory
+            wayfire_ini = os.path.abspath(wayfire_ini)
+
+        pid = sock.run("wayfire -c {}".format(wayfire_ini))["pid"]
+        time.sleep(1)
+        wayland_display = find_wayland_display(pid)
+        os.environ["WAYLAND_DISPLAY"] = wayland_display
+        self.socket_name = "/tmp/wayfire-{}.socket".format(wayland_display)
+        # let's close old client before connect to the nested one
+        self.client.close()
+        self.connect_client(self.socket_name)
+        if cmd is not None:
+            sock.run(cmd)
+        return wayland_display
+
     def test_random_press_key_with_modifiers(self, num_combinations=1):
         """
         Randomly generates key combinations and calls press_key function.
@@ -1592,6 +1630,8 @@ class WayfireSocket:
                 continue
 
     def test_random_set_view_position(self, view_id):
+        if view_id is None:
+            view_id = self.test_random_view_id()
         actions = [
             self.set_view_top_left,
             self.set_view_top_right,
@@ -1606,6 +1646,8 @@ class WayfireSocket:
         choice(actions)(view_id)
 
     def test_random_change_view_state(self, view_id):
+        if view_id is None:
+            view_id = self.test_random_view_id()
         actions = [
             lambda: self.maximize(view_id),
             lambda: self.set_fullscreen(view_id),
@@ -1618,6 +1660,8 @@ class WayfireSocket:
         choice(actions)()
 
     def test_random_list_info(self, view_id):
+        if view_id is None:
+            view_id = self.test_random_view_id()
         actions = [
             self.list_outputs,
             self.list_wsets,
@@ -1633,6 +1677,8 @@ class WayfireSocket:
         choice(actions)()
 
     def test_set_view_position(self, view_id):
+        if view_id is None:
+            view_id = self.test_random_view_id()
         self.set_view_top_left(view_id)
         self.set_view_top_right(view_id)
         self.set_view_bottom_left(view_id)
@@ -1644,19 +1690,23 @@ class WayfireSocket:
         self.set_view_bottom_right(view_id)
         self.set_focus(view_id)
 
-    def test_change_view_state(self, view_id):
-        functions = [
-            self.maximize,
-            self.set_fullscreen,
-            lambda view_id: self.set_minimized(view_id, choice([True, False])),
-            self.set_sticky,
-            self.send_to_back,
-            lambda view_id: self.set_view_alpha(view_id, random() * 1.0),
-            self.set_focus,
-        ]
+    def test_random_view_id(self):
+        ids = self.list_ids()
+        if ids:
+            return choice(ids)
 
-        random_function = choice(functions)
-        random_function(view_id)
+    def test_change_view_state(self, view_id):
+        if view_id is None:
+            view_id = self.test_random_view_id()
+        actions = [
+            lambda: self.maximize(view_id),
+            lambda: self.set_fullscreen(view_id),
+            lambda: self.set_minimized(view_id, choice([True, False])),
+            lambda: self.set_sticky(view_id, choice([True, False])),
+            lambda: self.send_to_back(view_id, choice([True, False])),
+            lambda: self.set_view_alpha(view_id, random() * 1.0),
+        ]
+        choice(actions)()
 
     def test_move_cursor_and_click(self):
         sumgeo = self.sum_geometry_resolution()
@@ -1681,6 +1731,8 @@ class WayfireSocket:
             )
 
     def test_list_info(self, view_id):
+        if view_id is None:
+            view_id = self.test_random_view_id()
         self.list_outputs()
         self.list_wsets()
         # self.wset_info(view_id)
@@ -1819,7 +1871,7 @@ class WayfireSocket:
         chosen_terminal = self.test_choose_terminal()
         if chosen_terminal:
             for _ in range(number_of_views_to_open):
-                Popen([chosen_terminal])
+                sock.run(chosen_terminal)
 
     def test_set_function_priority(self, functions):
         priority = []
@@ -1837,8 +1889,7 @@ class WayfireSocket:
         from wayfire.tests.gtk3_window import spam_new_views
 
         # Retrieve necessary data
-        list_views = self.list_views()
-        view_id = choice([view["id"] for view in list_views]) if list_views else None
+        view_id = self.test_random_view_id()
         workspaces = (
             [{"x": x, "y": y} for x, y in self.total_workspaces().values()]
             if self.total_workspaces()
@@ -1906,14 +1957,14 @@ class WayfireSocket:
                 # Repeat certain functions every N iterations
                 if should_execute_function_priority > 10:
                     for func, args in func_priority:
-                        for _ in range(2):
+                        for _ in range(4):
                             result = func(*args)
                             print(result)
                     should_execute_function_priority = 0
 
                 should_execute_function_priority += 1
 
-                if should_change_function_priority > 100:
+                if should_change_function_priority > 40:
                     func_priority = self.test_set_function_priority(functions)
                     should_execute_function_priority = 0
 
