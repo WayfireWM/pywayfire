@@ -1480,6 +1480,32 @@ class WayfireSocket:
             message["data"]["view-id"] = view_id
         return self.send_json(message)
 
+    def find_window_middle_cursor_position(self, window_geometry, monitor_geometry):
+        # Calculate the middle position of the window
+        window_middle_x = window_geometry["x"] + window_geometry["width"] // 2
+        window_middle_y = window_geometry["y"] + window_geometry["height"] // 2
+
+        # Calculate the offset from the monitor's top-left corner
+        cursor_x = monitor_geometry["x"] + window_middle_x
+        cursor_y = monitor_geometry["y"] + window_middle_y
+
+        return cursor_x, cursor_y
+
+    def move_cursor_middle(self, view_id):
+        view = self.get_view(view_id)
+        output_id = view["output-id"]
+        window_geometry = view["geometry"]
+        output_geometry = self.query_output(output_id)["geometry"]
+        cursor_x, cursor_y = self.find_window_middle_cursor_position(
+            window_geometry, output_geometry
+        )
+        self.move_cursor(cursor_x, cursor_y)
+
+    def focus_next_view_from_active_workspace(self):
+        views = self.get_views_from_active_workspace()
+        if views:
+            self.go_workspace_set_focus(views[0])
+
     def configure_input_device(self, id, enabled: bool):
         message = get_msg_template("input/configure-device")
         if message is None:
@@ -1488,7 +1514,14 @@ class WayfireSocket:
         message["data"]["enabled"] = enabled
         return self.send_json(message)
 
-    def start_nested_wayfire(self, wayfire_ini=None, cmd=None):
+    def test_nested_wayfire(self, wayland_display):
+        os.environ["WAYLAND_DISPLAY"] = wayland_display
+        socket_name = "/tmp/wayfire-{}.socket".format(wayland_display)
+        module_dir = pkg_resources.resource_filename(__name__, "")
+        fuzz = os.path.join(module_dir, "tests/fuzz.py")
+        os.system("python {0} {1} {2}".format(fuzz, socket_name, wayland_display))
+
+    def start_nested_wayfire(self, wayfire_ini=None, cmd=None, test=False):
         if wayfire_ini is None:
             module_dir = pkg_resources.resource_filename(__name__, "")
             wayfire_ini = os.path.join(module_dir, "tests/wayfire.ini")
@@ -1496,7 +1529,10 @@ class WayfireSocket:
             # If wayfire_ini is provided but not an absolute path, assume it's relative to the current directory
             wayfire_ini = os.path.abspath(wayfire_ini)
         logfile = "/tmp/wayfire-nested.log"
-        sock.run("wayfire -c {0} -d &>{1}".format(wayfire_ini, logfile))["pid"]
+        asan_options = "ASAN_OPTIONS=new_delete_type_mismatch=0:detect_leaks=0:detect_odr_violation=0"
+        sock.run(
+            "{0} wayfire -c {1} -d &>{2}".format(asan_options, wayfire_ini, logfile)
+        )["pid"]
         time.sleep(1)
         wayland_display = extract_socket_name(logfile)
         os.environ["WAYLAND_DISPLAY"] = wayland_display
@@ -1505,7 +1541,10 @@ class WayfireSocket:
         self.client.close()
         self.connect_client(self.socket_name)
         if cmd is not None:
-            sock.run(cmd)
+            sock.run("WAYLAND_DISPLAY={0} {1}".format(wayland_display, cmd))
+        if test is True:
+            # self.test_nested_wayfire(wayland_display)
+            self.test_spam_terminals(10, wayland_display=wayland_display)
         return wayland_display
 
     def test_random_press_key_with_modifiers(self, num_combinations=1):
@@ -1875,11 +1914,17 @@ class WayfireSocket:
                 return terminal
         return None
 
-    def test_spam_terminals(self, number_of_views_to_open):
+    def test_spam_terminals(self, number_of_views_to_open, wayland_display=None):
         chosen_terminal = self.test_choose_terminal()
         if chosen_terminal:
             for _ in range(number_of_views_to_open):
-                sock.run(chosen_terminal)
+                if wayland_display is None:
+                    sock.run(chosen_terminal)
+                else:
+                    command = "export WAYLAND_DISPLAY={0} ; {1}".format(
+                        wayland_display, chosen_terminal
+                    )
+                    Popen(command, shell=True)
 
     def test_set_function_priority(self, functions):
         priority = []
@@ -1893,7 +1938,9 @@ class WayfireSocket:
             for _ in range(1, randint(2, 100)):
                 self.delay_next_tx()
 
-    def test_wayfire(self, number_of_views_to_open, max_tries=1, speed=0, plugin=None):
+    def test_wayfire(
+        self, number_of_views_to_open, max_tries=1, speed=0, plugin=None, display=None
+    ):
         from wayfire.tests.gtk3_window import spam_new_views
 
         # Retrieve necessary data
@@ -1942,7 +1989,7 @@ class WayfireSocket:
 
         iterations = 0
 
-        self.test_spam_terminals(number_of_views_to_open)
+        self.test_spam_terminals(number_of_views_to_open, wayland_display=display)
 
         # Start spamming views
         thread = threading.Thread(target=spam_new_views)
