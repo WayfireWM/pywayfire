@@ -24,6 +24,14 @@ def check_geometry(x: int, y: int, width: int, height: int, obj) -> bool:
     return False
 
 
+def extract_socket_name(file_path):
+    with open(file_path, "r") as file:
+        for line in file:
+            if "Using socket name" in line:
+                parts = line.split()
+                return parts[-1].strip()
+
+
 def find_wayland_display(pid):
     try:
         process = psutil.Process(pid)
@@ -1487,10 +1495,10 @@ class WayfireSocket:
         elif not os.path.isabs(wayfire_ini):
             # If wayfire_ini is provided but not an absolute path, assume it's relative to the current directory
             wayfire_ini = os.path.abspath(wayfire_ini)
-
-        pid = sock.run("wayfire -c {}".format(wayfire_ini))["pid"]
+        logfile = "/tmp/wayfire-nested.log"
+        sock.run("wayfire -c {0} -d &>{1}".format(wayfire_ini, logfile))["pid"]
         time.sleep(1)
-        wayland_display = find_wayland_display(pid)
+        wayland_display = extract_socket_name(logfile)
         os.environ["WAYLAND_DISPLAY"] = wayland_display
         self.socket_name = "/tmp/wayfire-{}.socket".format(wayland_display)
         # let's close old client before connect to the nested one
