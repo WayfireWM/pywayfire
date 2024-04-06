@@ -3,5 +3,6 @@ clean() {
 }
 
 clean
+pip uninstall wayfire
 python3 -m pip install .
 clean
