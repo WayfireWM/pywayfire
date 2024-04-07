@@ -1539,9 +1539,7 @@ class WayfireSocket:
         if wayfire_ini is None:
             module_dir = pkg_resources.resource_filename(__name__, "")
             wayfire_ini = os.path.join(module_dir, "tests/wayfire.ini")
-        elif not os.path.isabs(wayfire_ini):
-            # If wayfire_ini is provided but not an absolute path, assume it's relative to the current directory
-            wayfire_ini = os.path.abspath(wayfire_ini)
+            print("Using config: {}".format(wayfire_ini))
         logfile = "/tmp/wayfire-nested.log"
         asan_options = "ASAN_OPTIONS=new_delete_type_mismatch=0:detect_leaks=0:detect_odr_violation=0"
         sock.run(
@@ -1879,8 +1877,11 @@ class WayfireSocket:
             random_function(*args)
 
     def test_output(self):
+        # low priority for this test because there is too many output creations
+        if randint(1, 100) < 90:
+            return
         current_outputs = self.list_outputs_ids()
-        for _ in range(4):
+        for _ in range(2):
             self.create_wayland_output()
             for output_id in self.list_outputs_ids():
                 if output_id in current_outputs:
@@ -2054,6 +2055,15 @@ class WayfireSocket:
                 iterations += 1
                 print(result)
                 self.random_delay_next_tx()
+                if iterations + 1 == max_tries:
+                    # lets close the focused output in the last iteration
+                    # so it close while still there is actions going on
+                    try:
+                        output_id = self.get_focused_output_id()
+                        name = self.query_output(output_id)["name"]
+                        self.destroy_wayland_output(name)
+                    except Exception as e:
+                        print(e)
 
             except Exception as e:
                 func_priority = self.test_set_function_priority(functions)
