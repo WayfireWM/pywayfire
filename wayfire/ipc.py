@@ -1535,14 +1535,7 @@ class WayfireSocket:
         message["data"]["enabled"] = enabled
         return self.send_json(message)
 
-    def test_nested_wayfire(self, wayland_display):
-        os.environ["WAYLAND_DISPLAY"] = wayland_display
-        socket_name = "/tmp/wayfire-{}.socket".format(wayland_display)
-        module_dir = pkg_resources.resource_filename(__name__, "")
-        fuzz = os.path.join(module_dir, "tests/fuzz.py")
-        os.system("python {0} {1} {2}".format(fuzz, socket_name, wayland_display))
-
-    def start_nested_wayfire(self, wayfire_ini=None, cmd=None, test=False):
+    def start_nested_wayfire(self, wayfire_ini=None, cmd=None):
         if wayfire_ini is None:
             module_dir = pkg_resources.resource_filename(__name__, "")
             wayfire_ini = os.path.join(module_dir, "tests/wayfire.ini")
@@ -1563,10 +1556,6 @@ class WayfireSocket:
         print(self.socket_name)
         print(os.path.exists(self.socket_name))
         self.connect_client(self.socket_name)
-
-        if test is True:
-            # self.test_nested_wayfire(wayland_display)
-            self.test_spam_terminals(10, wayland_display=wayland_display)
         return wayland_display
 
     def test_random_press_key_with_modifiers(self, num_combinations=1):
