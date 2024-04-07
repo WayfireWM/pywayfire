@@ -1,7 +1,7 @@
 import socket
 import json as js
 import os
-from subprocess import call, Popen, check_output, run, PIPE
+from subprocess import call, Popen, run, PIPE
 from itertools import cycle
 import dbus
 import configparser
@@ -714,8 +714,12 @@ class WayfireSocket:
     def get_focused_output(self):
         message = get_msg_template("window-rules/get-focused-output")
         if message is None:
-            return
-        return self.send_json(message)["info"]
+            return None
+        message = self.send_json(message)
+        if "info" in message:
+            return message["info"]
+        else:
+            return message
 
     def coordinates_to_number(self, rows, cols, coordinates):
         row, col = coordinates
@@ -978,6 +982,15 @@ class WayfireSocket:
             return view.get("geometry")
         return None
 
+    def toggle_minimized_from_app_id(self, app_id):
+        list_views = sock.list_views()
+        ids = [i["id"] for i in list_views if i["app-id"] == app_id]
+        for id in ids:
+            if sock.is_view_minimized(id):
+                sock.set_minimized(id, False)
+            else:
+                sock.set_minimized(id, True)
+
     def is_view_minimized(self, view_id):
         view = self.get_view(view_id)
         if view is not None:
@@ -1067,6 +1080,14 @@ class WayfireSocket:
         if message is None:
             return
         self.send_json(message)
+
+    def find_view_by_pid(self, pid):
+        lviews = self.list_views()
+        if not lviews:
+            return
+        view = [view for view in lviews if view["pid"] == pid]
+        if view:
+            return view[0]
 
     def find_device_id(self, name_or_id_or_type):
         devices = self.list_input_devices()
@@ -1480,24 +1501,24 @@ class WayfireSocket:
             message["data"]["view-id"] = view_id
         return self.send_json(message)
 
-    def find_window_middle_cursor_position(self, window_geometry, monitor_geometry):
-        # Calculate the middle position of the window
-        window_middle_x = window_geometry["x"] + window_geometry["width"] // 2
-        window_middle_y = window_geometry["y"] + window_geometry["height"] // 2
+    def find_view_middle_cursor_position(self, view_geometry, monitor_geometry):
+        # Calculate the middle position of the view
+        view_middle_x = view_geometry["x"] + view_geometry["width"] // 2
+        view_middle_y = view_geometry["y"] + view_geometry["height"] // 2
 
         # Calculate the offset from the monitor's top-left corner
-        cursor_x = monitor_geometry["x"] + window_middle_x
-        cursor_y = monitor_geometry["y"] + window_middle_y
+        cursor_x = monitor_geometry["x"] + view_middle_x
+        cursor_y = monitor_geometry["y"] + view_middle_y
 
         return cursor_x, cursor_y
 
     def move_cursor_middle(self, view_id):
         view = self.get_view(view_id)
         output_id = view["output-id"]
-        window_geometry = view["geometry"]
+        view_geometry = view["geometry"]
         output_geometry = self.query_output(output_id)["geometry"]
-        cursor_x, cursor_y = self.find_window_middle_cursor_position(
-            window_geometry, output_geometry
+        cursor_x, cursor_y = self.find_view_middle_cursor_position(
+            view_geometry, output_geometry
         )
         self.move_cursor(cursor_x, cursor_y)
 
@@ -1535,13 +1556,14 @@ class WayfireSocket:
         )["pid"]
         time.sleep(1)
         wayland_display = extract_socket_name(logfile)
-        os.environ["WAYLAND_DISPLAY"] = wayland_display
-        self.socket_name = "/tmp/wayfire-{}.socket".format(wayland_display)
-        # let's close old client before connect to the nested one
-        self.client.close()
-        self.connect_client(self.socket_name)
         if cmd is not None:
             sock.run("WAYLAND_DISPLAY={0} {1}".format(wayland_display, cmd))
+        os.environ["WAYLAND_DISPLAY"] = wayland_display
+        self.socket_name = "/tmp/wayfire-{}.socket".format(wayland_display)
+        print(self.socket_name)
+        print(os.path.exists(self.socket_name))
+        self.connect_client(self.socket_name)
+
         if test is True:
             # self.test_nested_wayfire(wayland_display)
             self.test_spam_terminals(10, wayland_display=wayland_display)
@@ -1867,6 +1889,17 @@ class WayfireSocket:
             random_function, args = functions[plugin]
             random_function(*args)
 
+    def test_output(self):
+        current_outputs = self.list_outputs_ids()
+        for _ in range(4):
+            self.create_wayland_output()
+            for output_id in self.list_outputs_ids():
+                if output_id in current_outputs:
+                    continue
+                else:
+                    name = self.query_output(output_id)["name"]
+                    self.destroy_wayland_output(name)
+
     def test_turn_off_on_outputs(self):
         self.dpms("off")
         time.sleep(10)
@@ -1967,6 +2000,7 @@ class WayfireSocket:
             (self.test_low_priority_plugins, (plugin,)),
             (self.set_focus, (view_id,)),
             (self.test_move_cursor_and_drag_drop, ()),
+            (self.test_output, ()),
             (
                 self.click_button,
                 (choice(["BTN_RIGHT", "BTN_LEFT"]), "full"),
