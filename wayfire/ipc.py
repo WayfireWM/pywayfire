@@ -12,6 +12,10 @@ import threading
 import psutil
 import pkg_resources
 
+from ctypes import CDLL
+
+CDLL("libgtk4-layer-shell.so")
+
 
 def check_geometry(x: int, y: int, width: int, height: int, obj) -> bool:
     if (
@@ -1977,6 +1981,7 @@ class WayfireSocket:
     ):
         from wayfire.tests.gtk3_window import spam_new_views
         from wayfire.tests.gtk3_dialogs import spam_new_dialogs
+        from wayfire.tests.layershell import spam_new_layers
 
         # Retrieve necessary data
         view_id = self.test_random_view_id()
@@ -2033,6 +2038,9 @@ class WayfireSocket:
 
         thread = threading.Thread(target=spam_new_dialogs)
         thread.start()
+
+        spam_new_layers_thread = threading.Thread(target=spam_new_layers)
+        spam_new_layers_thread.start()
 
         # FIXME: Implement this to not use keybinds in the terminal with script running
         # first_view_focused = self.get_focused_view()
