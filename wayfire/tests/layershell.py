@@ -1,12 +1,15 @@
 import gi
 import random
-import threading
 import time
+from wayfire.ipc import sock
+from random import randint
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("GtkLayerShell", "0.1")
 
 from gi.repository import Gtk, Gdk, GtkLayerShell
+
+sumgeo = sock.sum_geometry_resolution()
 
 
 class DockBar(Gtk.Window):
@@ -15,15 +18,17 @@ class DockBar(Gtk.Window):
 
         GtkLayerShell.init_for_window(self)
 
-        self.set_title("Dock Bar")
-        self.set_default_size(1080, 1080)
+        self.set_title("layer test")
+        self.set_default_size(randint(1, sumgeo[0]), randint(1, sumgeo[1]))
         self.set_type_hint(Gdk.WindowTypeHint.DOCK)
-        self.set_decorated(False)
+        self.set_position(Gtk.WindowPosition.NONE)
+        self.move(randint(1, sumgeo[0]), randint(1, sumgeo[1]))
 
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         self.add(box)
-
-        label = Gtk.Label(label="Hello World! " * 100)
+        label = "hello world! " * 40
+        label = label + "hello world \n" * 40
+        label = Gtk.Label(label=label)
         box.pack_start(label, True, True, 0)
 
         self.connect("destroy", Gtk.main_quit)
