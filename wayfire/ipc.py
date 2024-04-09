@@ -624,15 +624,19 @@ class WayfireSocket:
         message["data"]["id"] = view_id
         return self.send_json(message)
 
+    def get_active_workspace(self):
+        data = self.get_active_workspace_info()
+        if data:
+            x = data["x"]
+            y = data["y"]
+            return {"x": x, "y": y}
+
     def go_workspace_set_focus(self, view_id):
-        focused_output = self.get_focused_output_id()
-        view_output_id = self.get_view_output_id(view_id)
-        # needed to change the workspace if not the focused output
-        if focused_output != view_output_id:
-            self.set_focus(view_id)
         workspace = self.get_view_workspace(view_id)
+        active_workspace = self.get_active_workspace()
         if workspace:
-            self.set_workspace(workspace)
+            if active_workspace != workspace:
+                self.set_workspace(workspace)
         self.set_focus(view_id)
 
     def get_focused_view(self):
@@ -1535,6 +1539,13 @@ class WayfireSocket:
         message["data"]["enabled"] = enabled
         return self.send_json(message)
 
+    def get_config_location_from_log(self, file_path):
+        with open(file_path, "r") as file:
+            for line in file:
+                if "Using config file:" in line:
+                    parts = line.split()
+                    return parts[-1].strip()
+
     def start_nested_wayfire(self, wayfire_ini=None, cmd=None):
         if wayfire_ini is None:
             module_dir = pkg_resources.resource_filename(__name__, "")
@@ -1965,6 +1976,7 @@ class WayfireSocket:
         self, number_of_views_to_open, max_tries=1, speed=0, plugin=None, display=None
     ):
         from wayfire.tests.gtk3_window import spam_new_views
+        from wayfire.tests.gtk3_dialogs import spam_new_dialogs
 
         # Retrieve necessary data
         view_id = self.test_random_view_id()
@@ -2017,6 +2029,9 @@ class WayfireSocket:
 
         # Start spamming views
         thread = threading.Thread(target=spam_new_views)
+        thread.start()
+
+        thread = threading.Thread(target=spam_new_dialogs)
         thread.start()
 
         # FIXME: Implement this to not use keybinds in the terminal with script running
