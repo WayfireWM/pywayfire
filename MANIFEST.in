@@ -1,2 +1,3 @@
 include wayfire/tests/wayfire.ini
-
+include wayfire/tests/gtk3_dialogs.py
+include wayfire/tests/gtk3_window.py
