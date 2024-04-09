@@ -1892,9 +1892,6 @@ class WayfireSocket:
             random_function(*args)
 
     def test_output(self):
-        # low priority for this test because there is too many output creations
-        if randint(1, 1000) < 900:
-            return
         current_outputs = self.list_outputs_ids()
         for _ in range(2):
             self.create_wayland_output()
