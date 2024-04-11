@@ -972,6 +972,12 @@ class WayfireSocket:
             return view.get("output-id")
         return None
 
+    def get_view_output_name(self, view_id):
+        view = self.get_view(view_id)
+        if view is not None:
+            return view.get("output-name")
+        return None
+
     def is_view_fullscreen(self, view_id):
         view = self.get_view(view_id)
         if view is not None:
