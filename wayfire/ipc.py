@@ -1,7 +1,7 @@
 import socket
 import json as js
 import os
-from subprocess import call, Popen, run, PIPE
+from subprocess import call, Popen, check_output, run, PIPE
 from itertools import cycle
 import dbus
 import configparser
@@ -258,6 +258,15 @@ class WayfireSocket:
     # this is not a socket IPC thing, but since the compositor developer won't implement
     # dpms for ipc, this tool just works fine
     # this was not intended to be here, but anyways, lets use it
+
+    def dpms_status(self):
+        status = check_output(["wlopm"]).decode().strip().split("\n")
+        dpms_status = {}
+        for line in status:
+            line = line.split()
+            dpms_status[line[0]] = line[1]
+        return dpms_status
+
     def dpms(self, state, output_name=None):
         if state == "off" and output_name is None:
             outputs = [output["name"] for output in self.list_outputs()]
