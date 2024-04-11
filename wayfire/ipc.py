@@ -670,6 +670,18 @@ class WayfireSocket:
                 view_id = view_id["id"]
                 return self.get_view_pid(view_id)
 
+    def has_ouput_fullscreen_view(self, output_id):
+        # any fullscreen doesn't matter from what workspace
+        list_views = self.list_views()
+        if not list_views:
+            return
+        if any(
+            True
+            for i in list_views
+            if i["fullscreen"] is True and i["output-id"] == output_id
+        ):
+            return True
+
     def is_focused_view_fullscreen(self):
         focused_view = self.get_focused_view()
         if focused_view is not None:
