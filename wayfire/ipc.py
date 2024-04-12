@@ -552,6 +552,11 @@ class WayfireSocket:
         if outputs:
             return [i["id"] for i in outputs]
 
+    def list_outputs_names(self):
+        outputs = self.list_outputs()
+        if outputs:
+            return [i["name"] for i in outputs]
+
     def sum_geometry_resolution(self):
         outputs = sock.list_outputs()
         total_width = 0
@@ -791,6 +796,16 @@ class WayfireSocket:
         if focused_output is not None:
             return focused_output.get("id")
         return None
+
+    def get_output_id_by_name(self, output_name):
+        for output in self.list_outputs():
+            if output["name"] == output_name:
+                return output["id"]
+
+    def get_output_name_by_id(self, output_id):
+        for output in self.list_outputs():
+            if output["id"] == output_id:
+                return output["name"]
 
     def get_focused_output_geometry(self):
         focused_output = self.get_focused_output()
@@ -1226,6 +1241,20 @@ class WayfireSocket:
             or view["x"] + view["width"] <= workspace_start_x
             or view["y"] + view["height"] <= workspace_start_y
         )
+
+    def get_workspace_from_view(self, view_id):
+        ws_with_views = self.get_workspaces_with_views()
+        for ws in ws_with_views:
+            if ws["view-id"] == view_id:
+                return {"x": ws["x"], "y": ws["y"]}
+
+    def has_workspace_views(self, ws):
+        ws_with_views = self.get_workspaces_with_views()
+        for wwv in ws_with_views:
+            del wwv["view-id"]
+            if wwv == ws:
+                return True
+        return False
 
     def get_workspaces_with_views(self):
         focused_output = self.get_focused_output()
