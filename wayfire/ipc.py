@@ -5,6 +5,7 @@ from subprocess import call, Popen, check_output, run, PIPE
 from itertools import cycle
 import dbus
 import configparser
+from configparser import ConfigParser
 from itertools import filterfalse
 import time
 from random import randint, choice, random
@@ -1160,8 +1161,84 @@ class WayfireSocket:
         msg = self.configure_input_device(device_id, True)
         return msg
 
+    def get_wayfire_ini_path(self):
+        wayfire_ini_path = os.getenv("WAYFIRE_CONFIG_FILE")
+        if wayfire_ini_path:
+            return wayfire_ini_path
+        else:
+            print("Error: WAYFIRE_CONFIG_FILE environment variable is not set.")
+            return None
+
+    def enable_plugin(self, plugin_name):
+        wayfire_ini_path = self.get_wayfire_ini_path()
+        if not wayfire_ini_path:
+            return
+
+        config = ConfigParser()
+        config.read(wayfire_ini_path)
+
+        if "core" not in config:
+            config["core"] = {}
+
+        plugins = config["core"].get("plugins", "").split()
+
+        if plugin_name in plugins:
+            print(f"Plugin '{plugin_name}' is already enabled in wayfire.ini.")
+            return
+
+        plugins.append(plugin_name)
+        config["core"]["plugins"] = " ".join(plugins)
+
+        with open(wayfire_ini_path, "w") as configfile:
+            config.write(configfile)
+
+        print(f"Plugin '{plugin_name}' enabled successfully in wayfire.ini.")
+
+    def disable_plugin(self, plugin_name):
+        wayfire_ini_path = self.get_wayfire_ini_path()
+        if not wayfire_ini_path:
+            return
+
+        config = ConfigParser()
+        config.read(wayfire_ini_path)
+
+        if "core" not in config:
+            print("Error: 'core' section not found in wayfire.ini.")
+            return
+
+        plugins = config["core"].get("plugins", "").split()
+
+        if plugin_name not in plugins:
+            print(f"Plugin '{plugin_name}' is not enabled in wayfire.ini.")
+            return
+
+        plugins.remove(plugin_name)
+        config["core"]["plugins"] = " ".join(plugins)
+
+        with open(wayfire_ini_path, "w") as configfile:
+            config.write(configfile)
+
+        print(f"Plugin '{plugin_name}' disabled successfully in wayfire.ini.")
+
+    def list_enabled_plugins(self):
+        wayfire_ini_path = self.get_wayfire_ini_path()
+        if not wayfire_ini_path:
+            return []
+
+        config = ConfigParser()
+        config.read(wayfire_ini_path)
+
+        if "core" not in config:
+            print("Error: 'core' section not found in wayfire.ini.")
+            return []
+
+        plugins = config["core"].get("plugins", "").split()
+        return plugins
+
     def reload_plugins(self):
-        filename = os.path.expanduser(os.path.join("~", ".config", "wayfire.ini"))
+        filename = self.get_wayfire_ini_path()
+        if not filename:
+            return
 
         config = configparser.ConfigParser()
         config.read(filename)
@@ -1185,19 +1262,8 @@ class WayfireSocket:
             config.write(configfile)
 
     def reload_plugin(self, plugin_name):
-        filename = os.path.expanduser(os.path.join("~", ".config", "wayfire.ini"))
-        config = configparser.ConfigParser()
-        config.read(filename)
-        if plugin_name in config["core"]["plugins"]:
-            plugins_list = config["core"]["plugins"].split()
-            plugins_list.remove(plugin_name)
-            config["core"]["plugins"] = " ".join(plugins_list)
-            with open(filename, "w") as configfile:
-                config.write(configfile)
-            plugins_list.append(plugin_name)
-            config["core"]["plugins"] = " ".join(plugins_list)
-            with open(filename, "w") as configfile:
-                config.write(configfile)
+        self.disable_plugin(plugin_name)
+        self.enable_plugin(plugin_name)
 
     def maximize(self, view_id):
         self.assign_slot(view_id, "slot_c")
