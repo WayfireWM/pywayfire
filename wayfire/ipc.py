@@ -141,6 +141,74 @@ class WayfireSocket:
         message = get_msg_template("stipc/create_wayland_output", self.methods)
         self.send_json(message)
 
+    def create_headless_output(self, width, height):
+        message = get_msg_template("wayfire/create-headless-output")
+        message["data"]["width"] = width
+        message["data"]["height"] = height
+        return self.send_json(message)
+
+    def destroy_headless_output(self, output_name=None, output_id=None):
+        assert output_name is not None or output_id is not None
+        message = get_msg_template("wayfire/destroy-headless-output", self.methods)
+        if output_name is not None:
+            message["data"]["output"] = output_name
+        else:
+            message["data"]["output-id"] = output_id
+
+        return self.send_json(message)
+
+    def register_binding(
+        self,
+        binding: str,
+        call_method=None,
+        call_data=None,
+        command=None,
+        mode=None,
+        exec_always=False,
+    ):
+        message = get_msg_template("command/register-binding")
+        message["data"]["binding"] = binding
+        message["data"]["exec-always"] = exec_always
+        if mode and mode != "press" and mode != "normal":
+            message["data"]["mode"] = mode
+
+        if call_method is not None:
+            message["data"]["call-method"] = call_method
+        if call_data is not None:
+            message["data"]["call-data"] = call_data
+        if command is not None:
+            message["data"]["command"] = command
+
+        return self.send_json(message)
+
+    def unregister_binding(self, binding_id: int):
+        message = get_msg_template("command/unregister-binding")
+        message["data"]["binding-id"] = binding_id
+        return self.send_json(message)
+
+    def clear_bindings(self):
+        message = get_msg_template("command/clear-bindings")
+        return self.send_json(message)
+
+    def get_option_value(self, option):
+        message = get_msg_template("wayfire/get-config-option")
+        message["data"]["option"] = option
+        return self.send_json(message)
+
+    def set_option_values(self, options):
+        sanitized_options = {}
+        for key, value in options.items():
+            if "/" in key:
+                sanitized_options[key] = value
+            else:
+                for option_name, option_value in value.items():
+                    sanitized_options[key + "/" + option_name] = option_value
+
+        message = get_msg_template("wayfire/set-config-options")
+        print(js.dumps(sanitized_options, indent=4))
+        message["data"] = sanitized_options
+        return self.send_json(message)
+
     def layout_views(self, layout):
         views = self.list_views()
         method = "stipc/layout_views"
@@ -2015,6 +2083,8 @@ class WayfireSocket:
 
     def test_output(self):
         current_outputs = self.list_outputs_ids()
+        if randint(1, 1000) < 900:
+            return
         for _ in range(2):
             self.create_wayland_output()
             for output_id in self.list_outputs_ids():
@@ -2085,7 +2155,7 @@ class WayfireSocket:
 
     def test_set_function_priority(self, functions):
         priority = []
-        for i in range(randint(1, 4)):
+        for _ in range(randint(1, 4)):
             priority.append(choice(functions))
         return priority
 
@@ -2158,8 +2228,8 @@ class WayfireSocket:
         thread = threading.Thread(target=spam_new_dialogs)
         thread.start()
 
-        spam_new_layers_thread = threading.Thread(target=spam_new_layers)
-        spam_new_layers_thread.start()
+        # spam_new_layers_thread = threading.Thread(target=spam_new_layers)
+        # spam_new_layers_thread.start()
 
         # FIXME: Implement this to not use keybinds in the terminal with script running
         # first_view_focused = self.get_focused_view()
