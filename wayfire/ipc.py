@@ -2083,9 +2083,9 @@ class WayfireSocket:
 
     def test_output(self):
         current_outputs = self.list_outputs_ids()
-        # if randint(1, 1000) < 900:
-        #    return
-        for _ in range(4):
+        if randint(1, 1000) < 900:
+            return
+        for _ in range(randint(1, 8)):
             self.create_wayland_output()
             for output_id in self.list_outputs_ids():
                 if output_id in current_outputs:
@@ -2184,6 +2184,7 @@ class WayfireSocket:
         # Define functions to be executed
         functions = [
             (self.go_next_workspace_with_views, ()),
+            (self.go_workspace_set_focus, (view_id)),
             (self.set_focused_view_to_workspace_without_views, ()),
             (self.test_move_cursor_and_click, ()),
             (self.test_random_set_view_position, (view_id,)),
