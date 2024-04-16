@@ -2083,9 +2083,9 @@ class WayfireSocket:
 
     def test_output(self):
         current_outputs = self.list_outputs_ids()
-        if randint(1, 1000) < 900:
-            return
-        for _ in range(2):
+        # if randint(1, 1000) < 900:
+        #    return
+        for _ in range(4):
             self.create_wayland_output()
             for output_id in self.list_outputs_ids():
                 if output_id in current_outputs:
