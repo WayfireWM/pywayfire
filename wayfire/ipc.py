@@ -2153,6 +2153,13 @@ class WayfireSocket:
                     )
                     Popen(command, shell=True)
 
+    def test_spam_go_workspace_set_focus(self):
+        list_ids = self.list_ids()
+        num_items = random.randint(1, len(list_ids))
+        random_views = random.sample(list_ids, num_items)
+        for view_id in random_views:
+            self.go_workspace_set_focus(view_id)
+
     def test_set_function_priority(self, functions):
         priority = []
         for _ in range(randint(1, 4)):
@@ -2184,7 +2191,7 @@ class WayfireSocket:
         # Define functions to be executed
         functions = [
             (self.go_next_workspace_with_views, ()),
-            (self.go_workspace_set_focus, (view_id)),
+            (self.test_spam_go_workspace_set_focus, ()),
             (self.set_focused_view_to_workspace_without_views, ()),
             (self.test_move_cursor_and_click, ()),
             (self.test_random_set_view_position, (view_id,)),
@@ -2197,7 +2204,7 @@ class WayfireSocket:
             (self.test_low_priority_plugins, (plugin,)),
             (self.set_focus, (view_id,)),
             (self.test_move_cursor_and_drag_drop, ()),
-            (self.test_output, ()),
+            # (self.test_output, ()),
             (
                 self.click_button,
                 (choice(["BTN_RIGHT", "BTN_LEFT"]), "full"),
