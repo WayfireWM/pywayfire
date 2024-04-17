@@ -8,7 +8,7 @@ import configparser
 from configparser import ConfigParser
 from itertools import filterfalse
 import time
-from random import randint, choice, random
+from random import randint, choice, random, sample
 import threading
 import psutil
 import pkg_resources
@@ -2155,8 +2155,8 @@ class WayfireSocket:
 
     def test_spam_go_workspace_set_focus(self):
         list_ids = self.list_ids()
-        num_items = random.randint(1, len(list_ids))
-        random_views = random.sample(list_ids, num_items)
+        num_items = randint(1, len(list_ids))
+        random_views = sample(list_ids, num_items)
         for view_id in random_views:
             self.go_workspace_set_focus(view_id)
 
@@ -2204,7 +2204,7 @@ class WayfireSocket:
             (self.test_low_priority_plugins, (plugin,)),
             (self.set_focus, (view_id,)),
             (self.test_move_cursor_and_drag_drop, ()),
-            # (self.test_output, ()),
+            (self.test_output, ()),
             (
                 self.click_button,
                 (choice(["BTN_RIGHT", "BTN_LEFT"]), "full"),
