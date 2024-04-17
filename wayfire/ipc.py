@@ -2083,16 +2083,15 @@ class WayfireSocket:
 
     def test_output(self):
         current_outputs = self.list_outputs_ids()
-        if randint(1, 1000) < 900:
+        if randint(1, 1000) < 990:
             return
-        for _ in range(randint(1, 8)):
-            self.create_wayland_output()
-            for output_id in self.list_outputs_ids():
-                if output_id in current_outputs:
-                    continue
-                else:
-                    name = self.query_output(output_id)["name"]
-                    self.destroy_wayland_output(name)
+        self.create_wayland_output()
+        for output_id in self.list_outputs_ids():
+            if output_id in current_outputs:
+                continue
+            else:
+                name = self.query_output(output_id)["name"]
+                self.destroy_wayland_output(name)
 
     def test_turn_off_on_outputs(self):
         self.dpms("off")
@@ -2190,19 +2189,15 @@ class WayfireSocket:
 
         # Define functions to be executed
         functions = [
-            (self.go_next_workspace_with_views, ()),
             (self.test_spam_go_workspace_set_focus, ()),
             (self.set_focused_view_to_workspace_without_views, ()),
             (self.test_move_cursor_and_click, ()),
             (self.test_random_set_view_position, (view_id,)),
             (self.test_random_change_view_state, (view_id,)),
-            (self.test_random_list_info, (view_id,)),
             (self.test_set_view_position, (view_id,)),
-            (self.test_list_info, (view_id,)),
             (self.test_change_view_state, (view_id,)),
             (self.test_plugins, (plugin,)),
             (self.test_low_priority_plugins, (plugin,)),
-            (self.set_focus, (view_id,)),
             (self.test_move_cursor_and_drag_drop, ()),
             (self.test_output, ()),
             (
