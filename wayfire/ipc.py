@@ -2016,6 +2016,9 @@ class WayfireSocket:
         for _ in range(2):
             self.press_key("A-KEY_TAB")
 
+    def test_toggle_tile_plugin(self):
+        self.press_key("W-KEY_T")
+
     def test_auto_rotate_plugin(self):
         keys_combinations = [
             "C-W-KEY_UP",
@@ -2072,6 +2075,7 @@ class WayfireSocket:
             "switcherview": (self.test_toggle_switcher_view_plugin, ()),
             "autorotate": (self.test_auto_rotate_plugin, ()),
             "invert": (self.test_invert_plugin, ()),
+            "tile": (self.test_toggle_tile_plugin, ()),
         }
 
         if plugin is None:
@@ -2083,7 +2087,7 @@ class WayfireSocket:
 
     def test_output(self):
         current_outputs = self.list_outputs_ids()
-        if randint(1, 1000) < 990:
+        if randint(1, 1000) < 900:
             return
         self.create_wayland_output()
         for output_id in self.list_outputs_ids():
@@ -2171,6 +2175,16 @@ class WayfireSocket:
             for _ in range(1, randint(2, 100)):
                 self.delay_next_tx()
 
+    def test_random_views(self, view_id):
+        functions = [
+            lambda: self.test_random_set_view_position(view_id),
+            lambda: self.test_random_change_view_state(view_id),
+            lambda: self.test_set_view_position(view_id),
+            lambda: self.test_change_view_state(view_id),
+        ]
+
+        choice(functions)()
+
     def test_wayfire(
         self, number_of_views_to_open, max_tries=1, speed=0, plugin=None, display=None
     ):
@@ -2189,21 +2203,13 @@ class WayfireSocket:
 
         # Define functions to be executed
         functions = [
-            (self.test_spam_go_workspace_set_focus, ()),
-            (self.set_focused_view_to_workspace_without_views, ()),
+            (self.go_workspace_set_focus, (view_id)),
             (self.test_move_cursor_and_click, ()),
-            (self.test_random_set_view_position, (view_id,)),
-            (self.test_random_change_view_state, (view_id,)),
-            (self.test_set_view_position, (view_id,)),
-            (self.test_change_view_state, (view_id,)),
             (self.test_plugins, (plugin,)),
             (self.test_low_priority_plugins, (plugin,)),
             (self.test_move_cursor_and_drag_drop, ()),
             (self.test_output, ()),
-            (
-                self.click_button,
-                (choice(["BTN_RIGHT", "BTN_LEFT"]), "full"),
-            ),
+            (self.test_random_views, (view_id)),
             (
                 self.configure_view,
                 (
