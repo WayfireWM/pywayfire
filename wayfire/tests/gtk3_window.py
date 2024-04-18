@@ -59,5 +59,5 @@ def open_new_view(timeout):
 
 def spam_new_views():
     while True:
-        timeout = randint(1, 1000)
+        timeout = randint(100, 1000)
         open_new_view(timeout)
