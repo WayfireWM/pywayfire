@@ -1,5 +1,6 @@
 import socket
 import json as js
+import requests
 import os
 from subprocess import call, Popen, check_output, run, PIPE
 from itertools import cycle
@@ -1288,6 +1289,66 @@ class WayfireSocket:
 
         print(f"Plugin '{plugin_name}' disabled successfully in wayfire.ini.")
 
+    def list_plugins(self):
+        official_url = "https://github.com/WayfireWM/wayfire/tree/master/metadata"
+        extra_url = (
+            "https://github.com/WayfireWM/wayfire-plugins-extra/tree/master/metadata"
+        )
+
+        official_response = requests.get(official_url)
+        extra_response = requests.get(extra_url)
+
+        if official_response.status_code != 200 or extra_response.status_code != 200:
+            print("Failed to fetch content from one or both repositories.")
+            return {}
+
+        official_html_content = official_response.text
+        extra_html_content = extra_response.text
+
+        official_start_index = official_html_content.find(
+            '<script type="application/json" data-target="react-app.embeddedData">'
+        )
+        extra_start_index = extra_html_content.find(
+            '<script type="application/json" data-target="react-app.embeddedData">'
+        )
+
+        official_end_index = official_html_content.find(
+            "</script>", official_start_index
+        )
+        extra_end_index = extra_html_content.find("</script>", extra_start_index)
+
+        official_json_data = official_html_content[
+            official_start_index
+            + len(
+                '<script type="application/json" data-target="react-app.embeddedData">'
+            ) : official_end_index
+        ]
+        extra_json_data = extra_html_content[
+            extra_start_index
+            + len(
+                '<script type="application/json" data-target="react-app.embeddedData">'
+            ) : extra_end_index
+        ]
+
+        official_data = js.loads(official_json_data)
+        extra_data = js.loads(extra_json_data)
+
+        official_plugin_names = [
+            item["name"][:-4]
+            for item in official_data["payload"]["tree"]["items"]
+            if item["contentType"] == "file" and item["name"].endswith(".xml")
+        ]
+        extra_plugin_names = [
+            item["name"][:-4]
+            for item in extra_data["payload"]["tree"]["items"]
+            if item["contentType"] == "file" and item["name"].endswith(".xml")
+        ]
+
+        return {
+            "official-plugins": official_plugin_names,
+            "extra-plugins": extra_plugin_names,
+        }
+
     def list_enabled_plugins(self):
         wayfire_ini_path = self.get_wayfire_ini_path()
         if not wayfire_ini_path:
@@ -2111,9 +2172,9 @@ class WayfireSocket:
 
     def test_choose_terminal(self):
         terminals = [
-            "alacritty",
-            "kitty",
             "xterm",
+            "kitty",
+            "alacritty",
             "rxvt",
             "rxvt-unicode",
             "lxterminal",
