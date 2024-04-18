@@ -2111,8 +2111,9 @@ class WayfireSocket:
 
     def test_choose_terminal(self):
         terminals = [
-            "xterm",
+            "alacritty",
             "kitty",
+            "xterm",
             "rxvt",
             "rxvt-unicode",
             "lxterminal",
