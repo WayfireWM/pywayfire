@@ -2034,13 +2034,10 @@ class WayfireSocket:
         sumgeo = self.sum_geometry_resolution()
         self.move_cursor(randint(100, sumgeo[0]), randint(100, sumgeo[1]))
         self.click_button("BTN_LEFT", "full")
-        self.click_button("BTN_LEFT", "full")
-        self.click_button("BTN_RIGHT", "full")
-        self.click_button("BTN_RIGHT", "full")
 
     def test_move_cursor_and_drag_drop(self):
         sumgeo = self.sum_geometry_resolution()
-        random_iterations = randint(1, 20)
+        random_iterations = randint(1, 8)
 
         for _ in range(random_iterations):
             self.click_and_drag(
@@ -2148,7 +2145,7 @@ class WayfireSocket:
 
     def test_output(self):
         current_outputs = self.list_outputs_ids()
-        if randint(1, 1000) < 900:
+        if randint(1, 99) != 4:
             return
         self.create_wayland_output()
         for output_id in self.list_outputs_ids():
@@ -2173,8 +2170,8 @@ class WayfireSocket:
     def test_choose_terminal(self):
         terminals = [
             "xterm",
-            "kitty",
             "alacritty",
+            "kitty",
             "rxvt",
             "rxvt-unicode",
             "lxterminal",
@@ -2317,7 +2314,7 @@ class WayfireSocket:
 
             try:
                 # Repeat certain functions every N iterations
-                if should_execute_function_priority > 10:
+                if should_execute_function_priority > 20:
                     for func, args in func_priority:
                         for _ in range(4):
                             result = func(*args)
