@@ -1104,6 +1104,8 @@ class WayfireSocket:
 
     def toggle_minimize_from_app_id(self, app_id):
         list_views = sock.list_views()
+        if not list_views:
+            return
         ids = [i["id"] for i in list_views if i["app-id"] == app_id]
         for id in ids:
             if sock.is_view_minimized(id):
