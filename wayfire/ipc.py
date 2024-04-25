@@ -1,8 +1,6 @@
-import socket
-import json as js
 import os
 import time
-from wayfire.core.template import get_msg_template, geometry_to_json
+from wayfire.core.template import get_msg_template
 from wayfire.core.wayfire_socket import WayfireSocket
 
 
