@@ -1,8 +1,8 @@
 import socket
 import json as js
 import os
-import time
 from wayfire.core.template import get_msg_template, geometry_to_json
+
 
 class WayfireSocket:
     def __init__(self, socket_name):
