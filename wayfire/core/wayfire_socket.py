@@ -7,7 +7,8 @@ from wayfire.core.template import get_msg_template, geometry_to_json
 class WayfireSocket:
     def __init__(self, socket_name):
         self.client = None
-        if socket_name is None:
+        # pass false to avoid socket connection
+        if socket_name is None and socket_name is not False:
             # the last item is the most recent socket file
             socket_list = sorted(
                 [
@@ -22,7 +23,7 @@ class WayfireSocket:
                     break
                 except Exception as e:
                     print(e)
-        else:
+        if socket_name is not False:
             # initialize it once for performance in some cases
             self.connect_client(socket_name)
             self.methods = self.list_methods()
