@@ -1,5 +1,6 @@
 import os
 import time
+import socket
 from wayfire.core.template import get_msg_template
 from wayfire.core.wayfire_socket import WayfireSocket
 
@@ -7,6 +8,12 @@ from wayfire.core.wayfire_socket import WayfireSocket
 class WayfireIPC:
     def __init__(self, socket_name):
         self.client = None
+
+        w = WayfireSocket(False)
+        # load all ipc raw functions from wayfire_socket.py
+        for name in dir(w):
+            if not name.startswith("__"):
+                setattr(self, name, getattr(w, name))
 
         # if socket_name is empity, we need a workaround to set it
         # that happens when the compositor has no views in the workspace
@@ -26,12 +33,6 @@ class WayfireIPC:
                     break
                 except Exception as e:
                     print(e)
-
-        w = WayfireSocket(socket_name)
-        # load all ipc raw functions from wayfire_socket.py
-        for name in dir(w):
-            if not name.startswith("__"):
-                setattr(self, name, getattr(w, name))
 
         if socket_name is not None:
             # initialize it once for performance in some cases
