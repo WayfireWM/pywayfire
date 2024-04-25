@@ -8,12 +8,6 @@ class WayfireIPC:
     def __init__(self, socket_name):
         self.client = None
 
-        w = WayfireSocket()
-        # load all ipc raw functions from wayfire_socket.py
-        for name in dir(w):
-            if not name.startswith("__"):
-                setattr(self, name, getattr(w, name))
-
         # if socket_name is empity, we need a workaround to set it
         # that happens when the compositor has no views in the workspace
         # so WAYFIRE_SOCKET env is not set
@@ -32,7 +26,14 @@ class WayfireIPC:
                     break
                 except Exception as e:
                     print(e)
-        else:
+
+        w = WayfireSocket(socket_name)
+        # load all ipc raw functions from wayfire_socket.py
+        for name in dir(w):
+            if not name.startswith("__"):
+                setattr(self, name, getattr(w, name))
+
+        if socket_name is not None:
             # initialize it once for performance in some cases
             self.connect_client(socket_name)
             self.methods = self.list_methods()
@@ -380,4 +381,4 @@ class WayfireIPC:
 
 
 addr = os.getenv("WAYFIRE_SOCKET")
-sock = WayfireSocket(addr)
+sock = WayfireIPC(addr)
