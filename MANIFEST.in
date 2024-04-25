@@ -5,3 +5,4 @@ include wayfire/tests/layershell.py
 include wayfire/tests/fuzzy.py
 include wayfire/extra/features.py
 include wayfire/core/ipc_utils.py
+include wayfire/core/template.py
