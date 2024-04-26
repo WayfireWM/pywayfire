@@ -1,6 +1,6 @@
 [project]
 name = "wayfire"
-version = "1.0"
+version = "1.1"
 authors = [{ name = "Thiago", email = "systemofdown@gmail.com" }]
 description = "wayfire compositor library"
 readme = "README.md"
