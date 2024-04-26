@@ -2,13 +2,14 @@ from itertools import filterfalse
 from subprocess import check_output, call
 from ..ipc import sock
 
+
 class WayfireUtils:
     def __init__(self):
         # load all ipc functions from ipc.py
         for name in dir(sock):
             if not name.startswith("__"):
                 setattr(self, name, getattr(sock, name))
-                
+
     def find_view_middle_cursor_position(self, view_geometry, monitor_geometry):
         # Calculate the middle position of the view
         view_middle_x = view_geometry["x"] + view_geometry["width"] // 2
@@ -288,7 +289,6 @@ class WayfireUtils:
         if view is not None:
             pid = view["pid"]
             return pid
-
 
     def go_next_workspace(self):
         workspaces = list(self.total_workspaces().values())
@@ -661,7 +661,7 @@ class WayfireUtils:
 
     def set_view_bottom_right(self, view_id):
         self.assign_slot(view_id, "slot_br")
-    
+
     def dpms_status(self):
         status = check_output(["wlopm"]).decode().strip().split("\n")
         dpms_status = {}
