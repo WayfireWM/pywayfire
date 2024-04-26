@@ -1,11 +1,10 @@
 import os
 import time
-import socket
 from wayfire.core.template import get_msg_template
-from wayfire.core.wayfire_socket import WayfireSocket
+from wayfire.core.ipc_raw import WayfireSocket
 
 
-class WayfireIPC:
+class WayfireIPC(WayfireSocket):
     def __init__(self, socket_name):
         self.client = None
 
