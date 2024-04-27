@@ -136,26 +136,26 @@ class WayfireSocket:
         return self.read_message()
 
     def query_output(self, output_id: int):
-        message = get_msg_template("window-rules/output-info", self.methods)
+        message = get_msg_template("window-rules/output-info")
         if message is None:
             return
         message["data"]["id"] = output_id
         return self.send_json(message)
 
     def list_outputs(self):
-        message = get_msg_template("window-rules/list-outputs", self.methods)
+        message = get_msg_template("window-rules/list-outputs")
         if message is None:
             return
         return self.send_json(message)
 
     def list_wsets(self):
-        message = get_msg_template("window-rules/list-wsets", self.methods)
+        message = get_msg_template("window-rules/list-wsets")
         if message is None:
             return
         return self.send_json(message)
 
     def wset_info(self, id):
-        message = get_msg_template("window-rules/wset-info", self.methods)
+        message = get_msg_template("window-rules/wset-info")
         if not message:
             return
         message["data"]["id"] = id
@@ -165,7 +165,7 @@ class WayfireSocket:
 
     def watch(self):
         method = "window-rules/events/watch"
-        message = get_msg_template(method, self.methods)
+        message = get_msg_template(method)
         if message is None:
             return
         return self.send_json(message)
