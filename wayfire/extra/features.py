@@ -3,6 +3,10 @@ from configparser import ConfigParser
 import requests
 import json as js
 from ..ipc import sock
+from wayfire.core.template import get_msg_template
+from wayfire.ipc import WayfireIPC
+import psutil
+
 
 def check_geometry(x: int, y: int, width: int, height: int, obj) -> bool:
     if (
@@ -13,6 +17,7 @@ def check_geometry(x: int, y: int, width: int, height: int, obj) -> bool:
     ):
         return True
     return False
+
 
 def extract_socket_name(file_path):
     with open(file_path, "r") as file:
@@ -36,9 +41,15 @@ def find_wayland_display(pid):
 
     return None
 
+
 class ExtraFeatures:
     def __init__(self):
-        pass
+        w = WayfireIPC(None)
+        # load all ipc raw functions from wayfire_socket.py
+        for name in dir(w):
+            if not name.startswith("__"):
+                setattr(self, name, getattr(w, name))
+
     def get_wayfire_ini_path(self):
         wayfire_ini_path = os.getenv("WAYFIRE_CONFIG_FILE")
         if wayfire_ini_path:
@@ -478,7 +489,7 @@ class ExtraFeatures:
         self.xdg_open(output_file)
 
     def screenshot(self, id, filename):
-        capture = get_msg_template("view-shot/capture", self.methods)
+        capture = get_msg_template("view-shot/capture")
         if capture is None:
             return
         capture["data"]["view-id"] = id
