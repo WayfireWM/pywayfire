@@ -1,14 +1,10 @@
 from itertools import filterfalse
 from subprocess import check_output, call
-from ..ipc import sock
 
 
 class WayfireUtils:
     def __init__(self):
-        # load all ipc functions from ipc.py
-        for name in dir(sock):
-            if not name.startswith("__"):
-                setattr(self, name, getattr(sock, name))
+        pass
 
     def find_view_middle_cursor_position(self, view_geometry, monitor_geometry):
         # Calculate the middle position of the view
