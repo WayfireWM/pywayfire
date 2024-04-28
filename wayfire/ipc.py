@@ -2,17 +2,12 @@ import os
 import time
 from wayfire.core.template import get_msg_template
 from wayfire.core.ipc_raw import WayfireSocket
+from wayfire.core.ipc_utils import WayfireUtils
 
 
-class WayfireIPC(WayfireSocket):
+class WayfireIPC(WayfireSocket, WayfireUtils):
     def __init__(self, socket_name):
         self.client = None
-
-        w = WayfireSocket(False)
-        # load all ipc raw functions from wayfire_socket.py
-        for name in dir(w):
-            if not name.startswith("__"):
-                setattr(self, name, getattr(w, name))
 
         # if socket_name is empity, we need a workaround to set it
         # that happens when the compositor has no views in the workspace
