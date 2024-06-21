@@ -1,22 +1,14 @@
-def get_msg_template(method: str, methods=None):
-    plugin = None
+from typing import Any, Dict
+
+def get_msg_template(method: str, methods=None) -> Dict[str, Any]:
+    plugin: str = "unknown"
     # just in case there is a unknow situation where the method has no plugin
     if "/" in method:
         plugin = method.split("/")[0]
     if methods:
         if method not in methods:
-            if plugin is not None:
-                print(
-                    "To utilize this feature, please ensure that the '{0}' Wayfire plugin is enabled.".format(
-                        plugin
-                    )
-                )
-                print("Once enabled, reload the Wayfire module to apply the changes.")
-            else:
-                print(
-                    "No plugin found in the given method, cannot utilize this feature"
-                )
-            return None
+            raise Exception(f"To utilize {method}, please ensure that the '{plugin}' Wayfire plugin is enabled.\n \
+                    Once enabled, reload the Wayfire module to apply the changes.")
     # Create generic message template
     message = {}
     message["method"] = method

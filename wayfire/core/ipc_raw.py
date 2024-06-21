@@ -5,10 +5,13 @@ from wayfire.core.template import get_msg_template, geometry_to_json
 
 
 class WayfireSocket:
-    def __init__(self, socket_name):
-        self.client = None
-        # pass false to avoid socket connection
-        if socket_name is None and socket_name is not False:
+    def __init__(self, socket_name, allow_manual_search=False):
+        if socket_name is None:
+            socket_name = os.getenv("WAYFIRE_SOCKET")
+
+        self.socket_name = None
+
+        if socket_name is None and allow_manual_search:
             # the last item is the most recent socket file
             socket_list = sorted(
                 [
@@ -17,17 +20,23 @@ class WayfireSocket:
                     if "wayfire-wayland" in i
                 ]
             )
-            for sock in socket_list:
+
+            for candidate in socket_list:
                 try:
-                    self.connect_client(sock)
+                    self.connect_client(candidate)
+                    self.socket_name = candidate
                     break
-                except Exception as e:
-                    print(e)
-        if socket_name is not False:
-            # initialize it once for performance in some cases
+                except Exception:
+                    pass
+
+        elif socket_name is not None:
             self.connect_client(socket_name)
-            self.methods = self.list_methods()
             self.socket_name = socket_name
+
+        if self.socket_name is None:
+            raise Exception("Failed to find a suitable Wayfire socket!")
+
+        # initialize it once for performance in some cases
 
     def connect_client(self, socket_name):
         self.client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -60,7 +69,7 @@ class WayfireSocket:
 
     def destroy_headless_output(self, output_name=None, output_id=None):
         assert output_name is not None or output_id is not None
-        message = get_msg_template("wayfire/destroy-headless-output", self.methods)
+        message = get_msg_template("wayfire/destroy-headless-output")
         if output_name is not None:
             message["data"]["output"] = output_name
         else:
@@ -137,37 +146,25 @@ class WayfireSocket:
 
     def query_output(self, output_id: int):
         message = get_msg_template("window-rules/output-info")
-        if message is None:
-            return
         message["data"]["id"] = output_id
         return self.send_json(message)
 
     def list_outputs(self):
         message = get_msg_template("window-rules/list-outputs")
-        if message is None:
-            return
         return self.send_json(message)
 
     def list_wsets(self):
         message = get_msg_template("window-rules/list-wsets")
-        if message is None:
-            return
         return self.send_json(message)
 
     def wset_info(self, id):
         message = get_msg_template("window-rules/wset-info")
-        if not message:
-            return
         message["data"]["id"] = id
-        if message is None:
-            return
         return self.send_json(message)
 
     def watch(self):
         method = "window-rules/events/watch"
         message = get_msg_template(method)
-        if message is None:
-            return
         return self.send_json(message)
 
     def list_views(self):
@@ -188,8 +185,6 @@ class WayfireSocket:
 
     def configure_view(self, view_id: int, x: int, y: int, w: int, h: int):
         message = get_msg_template("window-rules/configure-view")
-        if message is None:
-            return
         message["data"]["id"] = view_id
         message["data"]["geometry"] = geometry_to_json(x, y, w, h)
         return self.send_json(message)
@@ -201,43 +196,31 @@ class WayfireSocket:
 
     def set_focus(self, view_id: int):
         message = get_msg_template("window-rules/focus-view")
-        if message is None:
-            return
         message["data"]["id"] = view_id
         return self.send_json(message)
 
     def get_view(self, view_id):
         message = get_msg_template("window-rules/view-info")
-        if message is None:
-            return
         message["data"]["id"] = view_id
         return self.send_json(message)["info"]
 
     def configure_input_device(self, id, enabled: bool):
         message = get_msg_template("input/configure-device")
-        if message is None:
-            return
         message["data"]["id"] = id
         message["data"]["enabled"] = enabled
         return self.send_json(message)
 
     def close_view(self, view_id):
         message = get_msg_template("window-rules/close-view")
-        if message is None:
-            return
         message["data"]["id"] = view_id
         return self.send_json(message)
 
     def get_focused_view(self):
         message = get_msg_template("window-rules/get-focused-view")
-        if message is None:
-            return
         return self.send_json(message)["info"]
 
     def get_focused_output(self):
         message = get_msg_template("window-rules/get-focused-output")
-        if message is None:
-            return None
         message = self.send_json(message)
         if "info" in message:
             return message["info"]
