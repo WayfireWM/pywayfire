@@ -2,7 +2,7 @@ import os
 from configparser import ConfigParser
 import requests
 import json as js
-from ..ipc import sock
+from .stipc import sock
 from wayfire.core.template import get_msg_template
 from wayfire.ipc import WayfireIPC
 import psutil
