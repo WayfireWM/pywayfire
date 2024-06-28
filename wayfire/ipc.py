@@ -41,6 +41,9 @@ class WayfireSocket:
         self.client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.client.connect(socket_name)
 
+    def close(self):
+        self.client.close()
+
     def read_exact(self, n):
         response = bytes()
         while n > 0:
@@ -332,3 +335,29 @@ class WayfireSocket:
     def list_input_devices(self):
         message = get_msg_template("input/list-devices")
         return self.send_json(message)
+
+    def get_tiling_layout(self):
+        method = "simple-tile/get-layout"
+        msg = get_msg_template(method)
+        output = self.get_focused_output()
+        wset = output["wset-index"]
+        x = output["workspace"]["x"]
+        y = output["workspace"]["y"]
+        msg["data"]["wset-index"] = wset
+        msg["data"]["workspace"] = {}
+        msg["data"]["workspace"]["x"] = x
+        msg["data"]["workspace"]["y"] = y
+        return self.send_json(msg)["layout"]
+
+    def set_tiling_layout(self, layout):
+        msg = get_msg_template("simple-tile/set-layout")
+        output = self.get_focused_output()
+        wset = output["wset-index"]
+        x = output["workspace"]["x"]
+        y = output["workspace"]["y"]
+        msg["data"]["wset-index"] = wset
+        msg["data"]["workspace"] = {}
+        msg["data"]["workspace"]["x"] = x
+        msg["data"]["workspace"]["y"] = y
+        msg["data"]["layout"] = layout
+        return self.send_json(msg)

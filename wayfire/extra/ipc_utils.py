@@ -1,8 +1,9 @@
 from itertools import filterfalse
 from subprocess import check_output, call
 
+from wayfire.extra.stipc import StipcSocket
 
-class WayfireUtils:
+class WayfireUtils(StipcSocket):
     def __init__(self):
         pass
 
@@ -231,10 +232,13 @@ class WayfireUtils:
 
     def get_workspace_number(self, x, y):
         workspaces_coordinates = self.total_workspaces()
+        if not workspaces_coordinates:
+            return
+
         coordinates_to_find = [
             i for i in workspaces_coordinates.values() if [y, x] == i
         ][0]
-        total_workspaces = len(self.total_workspaces())
+        total_workspaces = len(workspaces_coordinates)
         rows = int(total_workspaces**0.5)
         cols = (total_workspaces + rows - 1) // rows
         workspace_number = self.coordinates_to_number(rows, cols, coordinates_to_find)
@@ -287,7 +291,11 @@ class WayfireUtils:
             return pid
 
     def go_next_workspace(self):
-        workspaces = list(self.total_workspaces().values())
+        all_workspaces = self.total_workspaces()
+        if not all_workspaces:
+            return
+
+        workspaces = list(all_workspaces.values())
         active_workspace = self.get_focused_output()["workspace"]
 
         # Find the index of the current active workspace
@@ -301,7 +309,7 @@ class WayfireUtils:
 
         # Find the identifier of the next workspace
         next_workspace_id = None
-        for key, value in self.total_workspaces().items():
+        for key, value in all_workspaces.items():
             if value == next_workspace_coords:
                 next_workspace_id = key
                 break
@@ -385,16 +393,18 @@ class WayfireUtils:
 
     def get_workspace_from_view(self, view_id):
         ws_with_views = self.get_workspaces_with_views()
-        for ws in ws_with_views:
-            if ws["view-id"] == view_id:
-                return {"x": ws["x"], "y": ws["y"]}
+        if ws_with_views:
+            for ws in ws_with_views:
+                if ws["view-id"] == view_id:
+                    return {"x": ws["x"], "y": ws["y"]}
 
     def has_workspace_views(self, ws):
         ws_with_views = self.get_workspaces_with_views()
-        for wwv in ws_with_views:
-            del wwv["view-id"]
-            if wwv == ws:
-                return True
+        if ws_with_views:
+            for wwv in ws_with_views:
+                del wwv["view-id"]
+                if wwv == ws:
+                    return True
         return False
 
     def get_workspaces_with_views(self):

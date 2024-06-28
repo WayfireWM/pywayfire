@@ -2,11 +2,15 @@ import os
 from configparser import ConfigParser
 import requests
 import json as js
-from .stipc import sock
 from wayfire.core.template import get_msg_template
-from wayfire.ipc import WayfireIPC
+from wayfire.extra.ipc_utils import WayfireUtils
 import psutil
-
+import time
+import subprocess
+import os
+import dbus
+import pkg_resources
+from itertools import cycle
 
 def check_geometry(x: int, y: int, width: int, height: int, obj) -> bool:
     if (
@@ -42,14 +46,7 @@ def find_wayland_display(pid):
     return None
 
 
-class ExtraFeatures:
-    def __init__(self):
-        w = WayfireIPC(None)
-        # load all ipc raw functions from wayfire_socket.py
-        for name in dir(w):
-            if not name.startswith("__"):
-                setattr(self, name, getattr(w, name))
-
+class ExtraFeatures(WayfireUtils):
     def get_wayfire_ini_path(self):
         wayfire_ini_path = os.getenv("WAYFIRE_CONFIG_FILE")
         if wayfire_ini_path:
@@ -189,7 +186,7 @@ class ExtraFeatures:
         if not filename:
             return
 
-        config = configparser.ConfigParser()
+        config = ConfigParser()
         config.read(filename)
 
         # Comment out the 'plugins' line
@@ -436,14 +433,14 @@ class ExtraFeatures:
             print("Using config: {}".format(wayfire_ini))
         logfile = "/tmp/wayfire-nested.log"
         asan_options = "ASAN_OPTIONS=new_delete_type_mismatch=0:detect_leaks=0:detect_odr_violation=0"
-        sock.run(
+        self.run_cmd(
             "{0} wayfire -c {1} -d &>{2}".format(asan_options, wayfire_ini, logfile)
         )["pid"]
         time.sleep(1)
         wayland_display = extract_socket_name(logfile)
         if cmd is not None:
-            sock.run("WAYLAND_DISPLAY={0} {1}".format(wayland_display, cmd))
-        os.environ["WAYLAND_DISPLAY"] = wayland_display
+            self.run_cmd("WAYLAND_DISPLAY={0} {1}".format(wayland_display, cmd))
+        os.environ["WAYLAND_DISPLAY"] = wayland_display # type: ignore
         self.socket_name = "/tmp/wayfire-{}.socket".format(wayland_display)
         print(self.socket_name)
         print(os.path.exists(self.socket_name))
@@ -485,7 +482,7 @@ class ExtraFeatures:
         output = self.get_focused_output()
         name = output["name"]
         output_file = "/tmp/output-{0}.png".format(name)
-        call(["grim", "-o", name, output_file])
+        subprocess.call(["grim", "-o", name, output_file])
         self.xdg_open(output_file)
 
     def screenshot(self, id, filename):
@@ -497,7 +494,7 @@ class ExtraFeatures:
         self.send_json(capture)
 
     def dpms_status(self):
-        status = check_output(["wlopm"]).decode().strip().split("\n")
+        status = subprocess.check_output(["wlopm"]).decode().strip().split("\n")
         dpms_status = {}
         for line in status:
             line = line.split()
@@ -508,23 +505,24 @@ class ExtraFeatures:
         if state == "off" and output_name is None:
             outputs = [output["name"] for output in self.list_outputs()]
             for output in outputs:
-                call("wlopm --off {}".format(output).split())
+                subprocess.call("wlopm --off {}".format(output).split())
         if state == "on" and output_name is None:
             outputs = [output["name"] for output in self.list_outputs()]
             for output in outputs:
-                call("wlopm --on {}".format(output).split())
+                subprocess.call("wlopm --on {}".format(output).split())
         if state == "on":
-            call("wlopm --on {}".format(output_name).split())
+            subprocess.call("wlopm --on {}".format(output_name).split())
         if state == "off":
-            call("wlopm --off {}".format(output_name).split())
+            subprocess.call("wlopm --off {}".format(output_name).split())
         if state == "toggle":
-            call("wlopm --toggle {}".format(output_name).split())
+            subprocess.call("wlopm --toggle {}".format(output_name).split())
 
     def xdg_open(self, path):
-        call("xdg-open {0}".format(path).split())
+        subprocess.call("xdg-open {0}".format(path).split())
 
     def is_view_size_greater_than_half_workarea(self, view_id):
         output_id = self.get_view_output_id(view_id)
+        assert output_id
         output = self.query_output(output_id)
         workarea = output["workarea"]
         wa_w = workarea["width"]
@@ -538,12 +536,12 @@ class ExtraFeatures:
             return False
 
     def toggle_minimize_from_app_id(self, app_id):
-        list_views = sock.list_views()
+        list_views = self.list_views()
         if not list_views:
             return
         ids = [i["id"] for i in list_views if i["app-id"] == app_id]
         for id in ids:
-            if sock.is_view_minimized(id):
-                sock.set_minimized(id, False)
+            if self.is_view_minimized(id):
+                self.set_minimized(id, False)
             else:
-                sock.set_minimized(id, True)
+                self.set_minimized(id, True)
