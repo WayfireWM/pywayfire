@@ -4,9 +4,6 @@ from subprocess import check_output, call
 from wayfire.extra.stipc import StipcSocket
 
 class WayfireUtils(StipcSocket):
-    def __init__(self):
-        pass
-
     def find_view_middle_cursor_position(self, view_geometry, monitor_geometry):
         # Calculate the middle position of the view
         view_middle_x = view_geometry["x"] + view_geometry["width"] // 2

@@ -17,3 +17,6 @@ Issues = "https://github.com/killown/waypy/issues"
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+extras = []

@@ -127,7 +127,6 @@ class WayfireSocket:
                     sanitized_options[key + "/" + option_name] = option_value
 
         message = get_msg_template("wayfire/set-config-options")
-        print(js.dumps(sanitized_options, indent=4))
         message["data"] = sanitized_options
         return self.send_json(message)
 
@@ -165,7 +164,7 @@ class WayfireSocket:
                     Please ensure that the '{self._wayfire_plugin_from_method(msg['method'])}' Wayfire plugin is enabled. \
                     Once enabled, restart Wayfire to ensure that ipc was correctly loaded.")
 
-        return self.read_message()
+        return response
 
     def query_output(self, output_id: int):
         message = get_msg_template("window-rules/output-info")

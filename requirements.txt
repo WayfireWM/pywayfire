@@ -1,1 +1,3 @@
-dbus-python
+dbus-python[extras]
+requests[extras]
+psutil[extras]
