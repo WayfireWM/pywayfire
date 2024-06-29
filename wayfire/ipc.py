@@ -6,7 +6,7 @@ from wayfire.core.template import get_msg_template, geometry_to_json
 
 
 class WayfireSocket:
-    def __init__(self, socket_name, allow_manual_search=False):
+    def __init__(self, socket_name: str | None=None, allow_manual_search=False):
         if socket_name is None:
             socket_name = os.getenv("WAYFIRE_SOCKET")
 
@@ -184,9 +184,11 @@ class WayfireSocket:
         message["data"]["id"] = id
         return self.send_json(message)
 
-    def watch(self):
+    def watch(self, events: List[str] | None = None):
         method = "window-rules/events/watch"
         message = get_msg_template(method)
+        if events is not None:
+            message["data"]["events"] = events
         return self.send_json(message)
 
     def list_views(self, filter_mapped_toplevel=False) -> List[Any]:
