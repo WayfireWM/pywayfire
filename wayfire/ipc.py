@@ -85,6 +85,10 @@ class WayfireSocket:
 
         return self.send_json(message)
 
+    def get_configuration(self):
+        message = get_msg_template("wayfire/configuration")
+        return self.send_json(message)
+
     def register_binding(
         self,
         binding: str,
@@ -139,10 +143,7 @@ class WayfireSocket:
     def list_methods(self):
         query = get_msg_template("list-methods")
         response = self.send_json(query)
-        data = js.dumps(response["methods"], indent=4)
-        data = data.replace("'", '"')
-        data_list = js.loads(data)
-        return data_list
+        return response["methods"]
 
     @staticmethod
     def _wayfire_plugin_from_method(method: str) -> str:
@@ -209,10 +210,12 @@ class WayfireSocket:
             return [v for v in views if v["mapped"] is True and v["role"] != "desktop-environment" and v["pid"] != -1]
         return views
 
-    def configure_view(self, view_id: int, x: int, y: int, w: int, h: int):
+    def configure_view(self, view_id: int, x: int, y: int, w: int, h: int, output_id = None):
         message = get_msg_template("window-rules/configure-view")
         message["data"]["id"] = view_id
         message["data"]["geometry"] = geometry_to_json(x, y, w, h)
+        if output_id is not None:
+            message["data"]["output_id"] = output_id
         return self.send_json(message)
 
     def assign_slot(self, view_id: int, slot: str):
@@ -253,7 +256,7 @@ class WayfireSocket:
         else:
             return message
 
-    def set_fullscreen(self, view_id):
+    def set_view_fullscreen(self, view_id):
         message = get_msg_template("wm-actions/set-fullscreen")
         message["data"]["view_id"] = view_id
         message["data"]["state"] = True
@@ -281,19 +284,19 @@ class WayfireSocket:
         message = get_msg_template("wm-actions/toggle_showdesktop")
         return self.send_json(message)
 
-    def set_sticky(self, view_id, state):
+    def set_view_sticky(self, view_id, state):
         message = get_msg_template("wm-actions/set-sticky")
         message["data"]["view_id"] = view_id
         message["data"]["state"] = state
         return self.send_json(message)
 
-    def send_to_back(self, view_id, state):
+    def send_view_to_back(self, view_id, state):
         message = get_msg_template("wm-actions/send-to-back")
         message["data"]["view_id"] = view_id
         message["data"]["state"] = state
         return self.send_json(message)
 
-    def set_minimized(self, view_id, state):
+    def set_view_minimized(self, view_id, state):
         message = get_msg_template("wm-actions/set-minimized")
         message["data"]["view_id"] = view_id
         message["data"]["state"] = state
@@ -347,25 +350,17 @@ class WayfireSocket:
         message = get_msg_template("input/list-devices")
         return self.send_json(message)
 
-    def get_tiling_layout(self):
+    def get_tiling_layout(self, wset: int, x: int, y: int):
         method = "simple-tile/get-layout"
         msg = get_msg_template(method)
-        output = self.get_focused_output()
-        wset = output["wset-index"]
-        x = output["workspace"]["x"]
-        y = output["workspace"]["y"]
         msg["data"]["wset-index"] = wset
         msg["data"]["workspace"] = {}
         msg["data"]["workspace"]["x"] = x
         msg["data"]["workspace"]["y"] = y
         return self.send_json(msg)["layout"]
 
-    def set_tiling_layout(self, layout):
+    def set_tiling_layout(self, wset: int, x: int, y: int, layout):
         msg = get_msg_template("simple-tile/set-layout")
-        output = self.get_focused_output()
-        wset = output["wset-index"]
-        x = output["workspace"]["x"]
-        y = output["workspace"]["y"]
         msg["data"]["wset-index"] = wset
         msg["data"]["workspace"] = {}
         msg["data"]["workspace"]["x"] = x

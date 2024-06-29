@@ -688,3 +688,18 @@ class WayfireUtils(StipcSocket):
             call("wlopm --off {}".format(output_name).split())
         if state == "toggle":
             call("wlopm --toggle {}".format(output_name).split())
+
+    def get_current_tiling_layout(self):
+        output = self.get_focused_output()
+        wset = output["wset-index"]
+        x = output["workspace"]["x"]
+        y = output["workspace"]["y"]
+        return self.get_tiling_layout(wset, x, y)
+
+    def set_current_tiling_layout(self, layout):
+        output = self.get_focused_output()
+        wset = output["wset-index"]
+        x = output["workspace"]["x"]
+        y = output["workspace"]["y"]
+        return self.set_tiling_layout(wset, x, y, layout)
+
