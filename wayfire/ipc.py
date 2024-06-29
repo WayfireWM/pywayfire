@@ -11,6 +11,7 @@ class WayfireSocket:
             socket_name = os.getenv("WAYFIRE_SOCKET")
 
         self.socket_name = None
+        self.pending_events = []
 
         if socket_name is None and allow_manual_search:
             # the last item is the most recent socket file
@@ -62,6 +63,11 @@ class WayfireSocket:
         if "error" in response:
             raise Exception(response["error"])
         return response
+
+    def read_next_event(self):
+        if self.pending_events:
+            return self.pending_events.pop(0)
+        return self.read_message()
 
     def create_headless_output(self, width, height):
         message = get_msg_template("wayfire/create-headless-output")
@@ -158,13 +164,17 @@ class WayfireSocket:
         self.client.send(header)
         self.client.send(data)
 
-        response = self.read_message()
-        if "error" in response and response["error"] == "No such method found!":
-            raise Exception(f"Method {msg['method']} is not available. \
-                    Please ensure that the '{self._wayfire_plugin_from_method(msg['method'])}' Wayfire plugin is enabled. \
-                    Once enabled, restart Wayfire to ensure that ipc was correctly loaded.")
+        while True:
+            response = self.read_message()
+            if 'event' in response:
+                self.pending_events.append(response)
+                continue
 
-        return response
+            if "error" in response and response["error"] == "No such method found!":
+                raise Exception(f"Method {msg['method']} is not available. \
+                        Please ensure that the '{self._wayfire_plugin_from_method(msg['method'])}' Wayfire plugin is enabled. \
+                        Once enabled, restart Wayfire to ensure that ipc was correctly loaded.")
+            return response
 
     def query_output(self, output_id: int):
         message = get_msg_template("window-rules/output-info")
