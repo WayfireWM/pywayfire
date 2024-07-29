@@ -1,10 +1,7 @@
-include wayfire/tests/wayfire.ini
-include wayfire/tests/gtk3_dialogs.py
-include wayfire/tests/gtk3_window.py
-include wayfire/tests/layershell.py
-include wayfire/tests/fuzzy.py
-include wayfire/extra/features.py
-include wayfire/extra/stipc.py
-include wayfire/extra/ipc_utils.py
-include wayfire/core/template.py
 include wayfire/ipc.py
+include wayfire/__init__.py
+include wayfire/core/__init__.py
+include wayfire/core/template.py
+include wayfire/extra/wpe.py
+include wayfire/extra/ipc_utils.py
+include wayfire/extra/stipc.py
