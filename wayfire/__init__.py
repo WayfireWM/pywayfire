@@ -1,1 +1,1 @@
-from ipc import *
+from .ipc import *
