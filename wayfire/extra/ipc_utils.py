@@ -365,16 +365,16 @@ class WayfireUtils:
             return
 
     def go_previous_workspace(self):
-        previous = 1
-        current_workspace = self.get_active_workspace_number()
-        if current_workspace == 1:
-            previous = 9
-        else:
-            if current_workspace is not None:
-                previous = current_workspace - 1
-
-        self.socket.set_workspace(previous)
-        return True
+        grid_info = self.get_active_workspace_info()
+        current_x, current_y = grid_info['x'], grid_info['y']
+        grid_width, grid_height = grid_info['grid_width'], grid_info['grid_height']
+        previous = None
+        if current_x > 0:
+            previous =  {'x': current_x - 1, 'y': current_y  if current_x > 0 else grid_width - 1}
+        if current_x == 0:
+            previous = {'x': grid_width - 1, 'y': current_y - 1 if current_y > 0 else grid_height - 1}
+        if previous:
+            self.socket.set_workspace(previous)
 
     def focus_next_view_from_active_workspace(self):
         views = self.get_views_from_active_workspace()
