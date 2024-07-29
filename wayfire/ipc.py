@@ -92,6 +92,7 @@ class WayfireSocket:
     def register_binding(
         self,
         binding: str,
+        *,
         call_method=None,
         call_data=None,
         command=None,
