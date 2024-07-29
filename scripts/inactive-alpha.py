@@ -2,7 +2,7 @@
 #
 # This script demonstrates how Wayfire's IPC can be used to set the opacity of inactive views.
 
-from wayfire.ipc import WayfireSocket
+from wayfire import WayfireSocket
 
 sock = WayfireSocket()
 sock.watch(['view-focused'])

@@ -9,7 +9,7 @@
 # Lastly, this script can be run from a terminal for testing purposes, or started as an autostart entry.
 # It is safe to kill/restart the process at any point in time.
 
-from wayfire.ipc import WayfireSocket
+from wayfire import WayfireSocket
 
 sock = WayfireSocket()
 sock.watch(['view-mapped'])
@@ -20,7 +20,7 @@ while True:
     if "event" in msg:
         view = msg["view"]
         if view["app-id"] == "gedit":
-            output_data = sock.query_output(view["output"])
+            output_data = sock.get_output(view["output"])
             print(output_data)
             workarea = output_data["workarea"]
 

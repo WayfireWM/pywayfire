@@ -1,4 +1,4 @@
-from wayfire.ipc import WayfireSocket
+from wayfire import WayfireSocket
 import sys
 
 # This is a small example of how to use the Wayfire socket to set the touchscreen state to on or off.

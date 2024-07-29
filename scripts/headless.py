@@ -1,4 +1,4 @@
-from wayfire.ipc import WayfireSocket
+from wayfire import WayfireSocket
 import json
 import argparse
 

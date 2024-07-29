@@ -27,7 +27,7 @@ while True:
             # Tile the new view appropriately
 
             # First, figure out current wset and workspace and existing layout
-            output = sock.query_output(view["output-id"])
+            output = sock.get_output(view["output-id"])
             wset = output['wset-index']
             wsx = output['workspace']['x']
             wsy = output['workspace']['y']

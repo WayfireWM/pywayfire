@@ -4,11 +4,11 @@
 # The binding realised with this script is double pressing and releasing the left control button, which causes Expo to be activated.
 
 import time
-from wayfire.ipc import WayfireSocket
+from wayfire import WayfireSocket
 
 sock = WayfireSocket()
 
-response = sock.register_binding('KEY_D', 'press', True)
+response = sock.register_binding('KEY_LEFTCTRL', mode='press', exec_always=True)
 print(response)
 binding_id = response['binding-id']
 last_release_time = 0

@@ -20,7 +20,7 @@ python3 -m pip install .
 Basic usage is simple, import the `wayfire.ipc` module, create a socket (it will auto-detect the compositor by using the `WAYFIRE_SOCKET` environment variable) and call its functions:
 
 ```py
-from wayfire.ipc import WayfireSocket
+from wayfire import WayfireSocket
 
 socket = WayfireSocket()
 print(socket.list_views())
