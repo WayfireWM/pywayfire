@@ -150,6 +150,10 @@ class WayfireSocket:
     def _wayfire_plugin_from_method(method: str) -> str:
         if method.startswith("wf/alpha"):
             return "alpha"
+        if method.startswith("wf/obs"):
+            return "obs (wayfire-plugins-extra)"
+        if method.startswith("wf/filters"):
+            return "filters (soreau/filters)"
         if method.startswith("window-rules"):
             return "ipc-rules"
         if "/" not in method:
