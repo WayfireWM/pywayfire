@@ -2,9 +2,12 @@ import time
 from wayfire.core.template import get_msg_template
 from wayfire.ipc import WayfireSocket
 
-class StipcSocket(WayfireSocket):
+class Stipc:
+    def __init__(self, socket: WayfireSocket):
+        self.socket = socket
+
     def layout_views(self, layout):
-        views = self.list_views()
+        views = self.socket.list_views()
         method = "stipc/layout_views"
         message = get_msg_template(method)
         msg_layout = []
@@ -25,13 +28,13 @@ class StipcSocket(WayfireSocket):
                     msg_layout.append(layout_for_view)
 
         message["data"]["views"] = msg_layout
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def move_cursor(self, x: int, y: int):
         message = get_msg_template("stipc/move_cursor")
         message["data"]["x"] = x
         message["data"]["y"] = y
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def set_touch(self, id: int, x: int, y: int):
         method = "stipc/touch"
@@ -39,7 +42,7 @@ class StipcSocket(WayfireSocket):
         message["data"]["finger"] = id
         message["data"]["x"] = x
         message["data"]["y"] = y
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def tablet_tool_proximity(self, x, y, prox_in):
         method = "stipc/tablet/tool_proximity"
@@ -47,7 +50,7 @@ class StipcSocket(WayfireSocket):
         message["data"]["x"] = x
         message["data"]["y"] = y
         message["data"]["proximity_in"] = prox_in
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def tablet_tool_tip(self, x, y, state):
         method = "stipc/tablet/tool_tip"
@@ -55,7 +58,7 @@ class StipcSocket(WayfireSocket):
         message["data"]["x"] = x
         message["data"]["y"] = y
         message["data"]["state"] = state
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def tablet_tool_axis(self, x, y, pressure):
         method = "stipc/tablet/tool_axis"
@@ -63,52 +66,52 @@ class StipcSocket(WayfireSocket):
         message["data"]["x"] = x
         message["data"]["y"] = y
         message["data"]["pressure"] = pressure
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def tablet_tool_button(self, btn, state):
         method = "stipc/tablet/tool_button"
         message = get_msg_template(method)
         message["data"]["button"] = btn
         message["data"]["state"] = state
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def tablet_pad_button(self, btn, state):
         method = "stipc/tablet/pad_button"
         message = get_msg_template(method)
         message["data"]["button"] = btn
         message["data"]["state"] = state
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def release_touch(self, id: int):
         method = "stipc/touch_release"
         message = get_msg_template(method)
         message["data"]["finger"] = id
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def create_wayland_output(self):
         message = get_msg_template("stipc/create_wayland_output")
-        self.send_json(message)
+        self.socket.send_json(message)
 
     def destroy_wayland_output(self, output: str):
         method = "stipc/destroy_wayland_output"
         message = get_msg_template(method)
         message["data"]["output"] = output
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def delay_next_tx(self):
         method = "stipc/delay_next_tx"
         message = get_msg_template(method)
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def xwayland_pid(self):
         method = "stipc/get_xwayland_pid"
         message = get_msg_template(method)
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def xwayland_display(self):
         method = "stipc/get_xwayland_display"
         message = get_msg_template(method)
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def click_button(self, btn_with_mod: str, mode: str):
         """
@@ -120,23 +123,23 @@ class StipcSocket(WayfireSocket):
         message["method"] = "stipc/feed_button"
         message["data"]["mode"] = mode
         message["data"]["combo"] = btn_with_mod
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def ping(self):
         message = get_msg_template("stipc/ping")
-        response = self.send_json(message)
+        response = self.socket.send_json(message)
         return ("result", "ok") in response.items()
 
     def set_key_state(self, key: str, state: bool):
         message = get_msg_template("stipc/feed_key")
         message["data"]["key"] = key
         message["data"]["state"] = state
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def run_cmd(self, cmd):
         message = get_msg_template("stipc/run")
         message["data"]["cmd"] = cmd
-        return self.send_json(message)
+        return self.socket.send_json(message)
 
     def press_key(self, keys: str, timeout=0):
         modifiers = {

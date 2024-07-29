@@ -178,7 +178,7 @@ class WayfireSocket:
                         Once enabled, restart Wayfire to ensure that ipc was correctly loaded.")
             return response
 
-    def query_output(self, output_id: int):
+    def get_output(self, output_id: int):
         message = get_msg_template("window-rules/output-info")
         message["data"]["id"] = output_id
         return self.send_json(message)
@@ -335,14 +335,14 @@ class WayfireSocket:
         message["data"]["state"] = always_on_top
         return self.send_json(message)
 
-    def set_view_alpha(self, view_id: int, alpha: float):
+    def set_view_alpha(self, view_id, alpha: float):
         message = get_msg_template("wf/alpha/set-view-alpha")
         message["data"] = {}
         message["data"]["view-id"] = view_id
         message["data"]["alpha"] = alpha
         return self.send_json(message)
 
-    def get_view_alpha(self, view_id: int):
+    def get_view_alpha(self, view_id):
         message = get_msg_template("wf/alpha/get-view-alpha")
         message["data"]["view-id"] = view_id
         return self.send_json(message)

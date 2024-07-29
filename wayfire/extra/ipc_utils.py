@@ -1,9 +1,11 @@
 from itertools import filterfalse
-from subprocess import check_output, call
 
-from wayfire.extra.stipc import StipcSocket
+from wayfire.ipc import WayfireSocket
 
-class WayfireUtils(StipcSocket):
+class WayfireUtils:
+    def __init__(self, socket: WayfireSocket):
+        self.socket = socket
+
     def find_view_middle_cursor_position(self, view_geometry, monitor_geometry):
         # Calculate the middle position of the view
         view_middle_x = view_geometry["x"] + view_geometry["width"] // 2
@@ -15,16 +17,6 @@ class WayfireUtils(StipcSocket):
 
         return cursor_x, cursor_y
 
-    def move_cursor_middle(self, view_id):
-        view = self.get_view(view_id)
-        output_id = view["output-id"]
-        view_geometry = view["geometry"]
-        output_geometry = self.query_output(output_id)["geometry"]
-        cursor_x, cursor_y = self.find_view_middle_cursor_position(
-            view_geometry, output_geometry
-        )
-        self.move_cursor(cursor_x, cursor_y)
-
     def set_focused_view_to_workspace_without_views(self):
         view_id = self.get_focused_view_id()
         empity_workspace = self.get_workspaces_without_views()
@@ -33,7 +25,7 @@ class WayfireUtils(StipcSocket):
             empity_workspace = {"x": empity_workspace[0], "y": empity_workspace[1]}
         else:
             return
-        self.set_workspace(empity_workspace, view_id)
+        self.socket.set_workspace(empity_workspace, view_id)
 
     def tile_list_views(self, layout):
         if "view-id" in layout:
@@ -59,10 +51,10 @@ class WayfireUtils(StipcSocket):
             print("fail")
 
     def focused_output_views(self):
-        list_views = self.list_views()
+        list_views = self.socket.list_views()
         if not list_views:
             return
-        focused_output = self.get_focused_output()
+        focused_output = self.socket.get_focused_output()
         if not focused_output:
             return
         output_views = [
@@ -71,7 +63,7 @@ class WayfireUtils(StipcSocket):
         return output_views
 
     def list_pids(self):
-        list_views = self.list_views()
+        list_views = self.socket.list_views()
         if not list_views:
             return
         list_pids = []
@@ -80,26 +72,27 @@ class WayfireUtils(StipcSocket):
         return list_pids
 
     def list_ids(self):
-        list_views = self.list_views()
+        list_views = self.socket.list_views()
         if not list_views:
-            return
+            return []
         list_ids = []
         for view in list_views:
             list_ids.append(view["id"])
         return list_ids
 
     def list_outputs_ids(self):
-        outputs = self.list_outputs()
+        outputs = self.socket.list_outputs()
         if outputs:
             return [i["id"] for i in outputs]
+        return []
 
     def list_outputs_names(self):
-        outputs = self.list_outputs()
+        outputs = self.socket.list_outputs()
         if outputs:
             return [i["name"] for i in outputs]
 
     def sum_geometry_resolution(self):
-        outputs = self.list_outputs()
+        outputs = self.socket.list_outputs()
         total_width = 0
         total_height = 0
         for output in outputs:
@@ -129,24 +122,24 @@ class WayfireUtils(StipcSocket):
         active_workspace = self.get_active_workspace()
         if workspace:
             if active_workspace != workspace:
-                self.set_workspace(workspace)
-        self.set_focus(view_id)
+                self.socket.set_workspace(workspace)
+        self.socket.set_focus(view_id)
 
     def get_focused_view_info(self):
         id = self.get_focused_view_id()
-        return [i for i in self.list_views() if i["id"] == id][0]
+        return [i for i in self.socket.list_views() if i["id"] == id][0]
 
     def get_focused_view_pid(self):
-        view = self.get_focused_view()
+        view = self.socket.get_focused_view()
         if view is not None:
-            view_id = self.get_focused_view()
+            view_id = self.socket.get_focused_view()
             if view_id is not None:
                 view_id = view_id["id"]
                 return self.get_view_pid(view_id)
 
     def has_ouput_fullscreen_view(self, output_id):
         # any fullscreen doesn't matter from what workspace
-        list_views = self.list_views()
+        list_views = self.socket.list_views()
         if not list_views:
             return
         if any(
@@ -157,7 +150,7 @@ class WayfireUtils(StipcSocket):
             return True
 
     def is_focused_view_fullscreen(self):
-        focused_view = self.get_focused_view()
+        focused_view = self.socket.get_focused_view()
         if focused_view is not None:
             return focused_view.get("fullscreen")
         return None
@@ -169,25 +162,25 @@ class WayfireUtils(StipcSocket):
         return None
 
     def get_focused_view_bbox(self):
-        focused_view = self.get_focused_view()
+        focused_view = self.socket.get_focused_view()
         if focused_view is not None:
             return focused_view.get("bbox")
         return None
 
     def get_focused_view_layer(self):
-        focused_view = self.get_focused_view()
+        focused_view = self.socket.get_focused_view()
         if focused_view is not None:
             return focused_view.get("layer")
         return None
 
     def get_focused_view_id(self):
-        focused_view = self.get_focused_view()
+        focused_view = self.socket.get_focused_view()
         if focused_view is not None:
             return focused_view.get("id")
         return None
 
     def get_focused_view_output(self):
-        focused_view = self.get_focused_view()
+        focused_view = self.socket.get_focused_view()
         if focused_view is not None:
             return focused_view.get("output-id")
         return None
@@ -196,12 +189,12 @@ class WayfireUtils(StipcSocket):
         # the issue here is that if you get focused data directly
         # sometimes it will get stuff from different roles like desktop-environment
         # list-view will just filter all those stuff
-        view_id = self.get_focused_view()
+        view_id = self.socket.get_focused_view()
         if view_id:
             view_id = view_id["id"]
         else:
             return ""
-        list_view = self.list_views()
+        list_view = self.socket.list_views()
         title = [view["title"] for view in list_view if view_id == view["id"]]
         if title:
             return title[0]
@@ -209,10 +202,10 @@ class WayfireUtils(StipcSocket):
             return ""
 
     def get_focused_view_type(self):
-        return self.get_focused_view()["type"]
+        return self.socket.get_focused_view()["type"]
 
     def get_focused_view_app_id(self):
-        return self.get_focused_view()["app-id"]
+        return self.socket.get_focused_view()["app-id"]
 
     def coordinates_to_number(self, rows, cols, coordinates):
         row, col = coordinates
@@ -222,7 +215,7 @@ class WayfireUtils(StipcSocket):
             return None
 
     def get_active_workspace_number(self):
-        focused_output = self.get_focused_output()
+        focused_output = self.socket.get_focused_output()
         x = focused_output["workspace"]["x"]
         y = focused_output["workspace"]["y"]
         return self.get_workspace_number(x, y)
@@ -242,47 +235,47 @@ class WayfireUtils(StipcSocket):
         return workspace_number
 
     def get_active_workspace_info(self):
-        focused_output = self.get_focused_output()
+        focused_output = self.socket.get_focused_output()
         if focused_output is not None:
             return focused_output.get("workspace")
         return None
 
     def get_focused_output_name(self):
-        focused_output = self.get_focused_output()
+        focused_output = self.socket.get_focused_output()
         if focused_output is not None:
             return focused_output.get("name")
         return None
 
     def get_focused_output_id(self):
-        focused_output = self.get_focused_output()
+        focused_output = self.socket.get_focused_output()
         if focused_output is not None:
             return focused_output.get("id")
         return None
 
     def get_output_id_by_name(self, output_name):
-        for output in self.list_outputs():
+        for output in self.socket.list_outputs():
             if output["name"] == output_name:
                 return output["id"]
 
     def get_output_name_by_id(self, output_id):
-        for output in self.list_outputs():
+        for output in self.socket.list_outputs():
             if output["id"] == output_id:
                 return output["name"]
 
     def get_focused_output_geometry(self):
-        focused_output = self.get_focused_output()
+        focused_output = self.socket.get_focused_output()
         if focused_output is not None:
             return focused_output.get("geometry")
         return None
 
     def get_focused_output_workarea(self):
-        focused_output = self.get_focused_output()
+        focused_output = self.socket.get_focused_output()
         if focused_output is not None:
             return focused_output.get("workarea")
         return None
 
     def get_view_pid(self, view_id):
-        view = self.get_view(view_id)
+        view = self.socket.get_view(view_id)
         if view is not None:
             pid = view["pid"]
             return pid
@@ -293,7 +286,7 @@ class WayfireUtils(StipcSocket):
             return
 
         workspaces = list(all_workspaces.values())
-        active_workspace = self.get_focused_output()["workspace"]
+        active_workspace = self.socket.get_focused_output()["workspace"]
 
         # Find the index of the current active workspace
         current_index = workspaces.index([active_workspace["y"], active_workspace["x"]])
@@ -313,7 +306,7 @@ class WayfireUtils(StipcSocket):
 
         # Set the next workspace
         if next_workspace_id:
-            self.set_workspace(
+            self.socket.set_workspace(
                 {"y": next_workspace_coords[0], "x": next_workspace_coords[1]}
             )
 
@@ -352,7 +345,7 @@ class WayfireUtils(StipcSocket):
             first_workspace = self.get_workspaces_with_views()
             if first_workspace:
                 first_workspace = first_workspace[0]
-            self.set_workspace(first_workspace)
+            self.socket.set_workspace(first_workspace)
             return
 
         # Calculate the index of the next workspace cyclically
@@ -363,11 +356,11 @@ class WayfireUtils(StipcSocket):
 
     def go_next_workspace_with_views(self):
         workspaces = self.get_workspaces_with_views()
-        active_workspace = self.get_focused_output()["workspace"]
+        active_workspace = self.socket.get_focused_output()["workspace"]
         active_workspace = {"x": active_workspace["x"], "y": active_workspace["y"]}
         next_ws = self.get_next_workspace(workspaces, active_workspace)
         if next_ws:
-            self.set_workspace(next_ws)
+            self.socket.set_workspace(next_ws)
         else:
             return
 
@@ -380,7 +373,7 @@ class WayfireUtils(StipcSocket):
             if current_workspace is not None:
                 previous = current_workspace - 1
 
-        self.set_workspace(previous)
+        self.socket.set_workspace(previous)
         return True
 
     def focus_next_view_from_active_workspace(self):
@@ -405,7 +398,7 @@ class WayfireUtils(StipcSocket):
         return False
 
     def get_workspaces_with_views(self):
-        focused_output = self.get_focused_output()
+        focused_output = self.socket.get_focused_output()
         monitor = focused_output["geometry"]
         ws_with_views = []
         views = self.focused_output_views()
@@ -437,7 +430,7 @@ class WayfireUtils(StipcSocket):
         return list(filterfalse(lambda x: x in workspace_with_views, all_workspaces))
 
     def get_workspace_coordinates(self, view_info):
-        focused_output = self.get_focused_output()
+        focused_output = self.socket.get_focused_output()
         monitor = focused_output["geometry"]
         views = [view_info]
         for ws_x in range(focused_output["workspace"]["grid_width"]):
@@ -464,48 +457,48 @@ class WayfireUtils(StipcSocket):
         ]
 
     def close_focused_view(self):
-        view_id = self.get_focused_view()["id"]
-        self.close_view(view_id)
+        view_id = self.socket.get_focused_view()["id"]
+        self.socket.close_view(view_id)
 
     def get_view_info(self, view_id):
-        info = [i for i in self.list_views() if i["id"] == view_id]
+        info = [i for i in self.socket.list_views() if i["id"] == view_id]
         if info:
             return info[0]
         else:
             return
 
     def get_view_output_id(self, view_id):
-        view = self.get_view(view_id)
+        view = self.socket.get_view(view_id)
         if view is not None:
             return view.get("output-id")
         return None
 
     def get_view_output_name(self, view_id):
-        view = self.get_view(view_id)
+        view = self.socket.get_view(view_id)
         if view is not None:
             return view.get("output-name")
         return None
 
     def is_view_fullscreen(self, view_id):
-        view = self.get_view(view_id)
+        view = self.socket.get_view(view_id)
         if view is not None:
             return view.get("fullscreen")
         return None
 
     def is_view_focusable(self, view_id):
-        view = self.get_view(view_id)
+        view = self.socket.get_view(view_id)
         if view is not None:
             return view.get("focusable")
         return None
 
     def get_view_geometry(self, view_id):
-        view = self.get_view(view_id)
+        view = self.socket.get_view(view_id)
         if view is not None:
             return view.get("geometry")
         return None
 
     def is_view_minimized(self, view_id):
-        view = self.get_view(view_id)
+        view = self.socket.get_view(view_id)
         if view is not None:
             return view.get("minimized")
         return None
@@ -517,25 +510,25 @@ class WayfireUtils(StipcSocket):
         return False
 
     def get_view_tiled_edges(self, view_id):
-        view = self.get_view(view_id)
+        view = self.socket.get_view(view_id)
         if view is not None:
             return view.get("tiled-edges")
         return None
 
     def get_view_title(self, view_id):
-        view = self.get_view(view_id)
+        view = self.socket.get_view(view_id)
         if view is not None:
             return view.get("title")
         return None
 
     def get_view_type(self, view_id):
-        view = self.get_view(view_id)
+        view = self.socket.get_view(view_id)
         if view is not None:
             return view.get("type")
         return None
 
     def get_view_app_id(self, view_id):
-        view = self.get_view(view_id)
+        view = self.socket.get_view(view_id)
         if view is not None:
             return view.get("app-id")
         return None
@@ -559,15 +552,15 @@ class WayfireUtils(StipcSocket):
         return None
 
     def maximize_focused(self):
-        view = self.get_focused_view()
-        self.assign_slot(view["id"], "slot_c")
+        view = self.socket.get_focused_view()
+        self.socket.assign_slot(view["id"], "slot_c")
 
     def fullscreen_focused(self):
-        view = self.get_focused_view()
-        self.set_fullscreen(view["id"])
+        view = self.socket.get_focused_view()
+        self.socket.set_view_fullscreen(view["id"])
 
     def find_view_by_pid(self, pid):
-        lviews = self.list_views()
+        lviews = self.socket.list_views()
         if not lviews:
             return
         view = [view for view in lviews if view["pid"] == pid]
@@ -575,7 +568,7 @@ class WayfireUtils(StipcSocket):
             return view[0]
 
     def find_device_id(self, name_or_id_or_type):
-        devices = self.list_input_devices()
+        devices = self.socket.list_input_devices()
         for dev in devices:
             if (
                 dev["name"] == name_or_id_or_type
@@ -587,16 +580,16 @@ class WayfireUtils(StipcSocket):
 
     def disable_input_device(self, args):
         device_id = self.find_device_id(args)
-        msg = self.configure_input_device(device_id, False)
+        msg = self.socket.configure_input_device(device_id, False)
         return msg
 
     def enable_input_device(self, args):
         device_id = self.find_device_id(args)
-        msg = self.configure_input_device(device_id, True)
+        msg = self.socket.configure_input_device(device_id, True)
         return msg
 
     def maximize(self, view_id):
-        self.assign_slot(view_id, "slot_c")
+        self.socket.assign_slot(view_id, "slot_c")
 
     def maximize_all_views_from_active_workspace(self):
         for view_id in self.get_views_from_active_workspace():
@@ -606,7 +599,7 @@ class WayfireUtils(StipcSocket):
     def total_workspaces(self):
         winfo = self.get_active_workspace_info()
         if not winfo:
-            return
+            return {}
         total_workspaces = winfo["grid_height"] * winfo["grid_width"]
 
         # Calculate the number of rows and columns based on the total number of workspaces
@@ -639,67 +632,54 @@ class WayfireUtils(StipcSocket):
         )
 
     def set_view_top_left(self, view_id):
-        self.assign_slot(view_id, "slot_tl")
+        self.socket.assign_slot(view_id, "slot_tl")
 
     def set_view_top_right(self, view_id):
-        self.assign_slot(view_id, "slot_tr")
+        self.socket.assign_slot(view_id, "slot_tr")
 
     def set_view_bottom_left(self, view_id):
-        self.assign_slot(view_id, "slot_bl")
+        self.socket.assign_slot(view_id, "slot_bl")
 
     def set_view_right(self, view_id):
-        self.assign_slot(view_id, "slot_r")
+        self.socket.assign_slot(view_id, "slot_r")
 
     def set_view_left(self, view_id):
-        self.assign_slot(view_id, "slot_l")
+        self.socket.assign_slot(view_id, "slot_l")
 
     def set_view_bottom(self, view_id):
-        self.assign_slot(view_id, "slot_b")
+        self.socket.assign_slot(view_id, "slot_b")
 
     def set_view_top(self, view_id):
-        self.assign_slot(view_id, "slot_t")
+        self.socket.assign_slot(view_id, "slot_t")
 
     def set_view_center(self, view_id):
-        self.assign_slot(view_id, "slot_c")
+        self.socket.assign_slot(view_id, "slot_c")
 
     def set_view_bottom_right(self, view_id):
-        self.assign_slot(view_id, "slot_br")
-
-    def dpms_status(self):
-        status = check_output(["wlopm"]).decode().strip().split("\n")
-        dpms_status = {}
-        for line in status:
-            line = line.split()
-            dpms_status[line[0]] = line[1]
-        return dpms_status
-
-    def dpms(self, state, output_name=None):
-        if state == "off" and output_name is None:
-            outputs = [output["name"] for output in self.list_outputs()]
-            for output in outputs:
-                call("wlopm --off {}".format(output).split())
-        if state == "on" and output_name is None:
-            outputs = [output["name"] for output in self.list_outputs()]
-            for output in outputs:
-                call("wlopm --on {}".format(output).split())
-        if state == "on":
-            call("wlopm --on {}".format(output_name).split())
-        if state == "off":
-            call("wlopm --off {}".format(output_name).split())
-        if state == "toggle":
-            call("wlopm --toggle {}".format(output_name).split())
+        self.socket.assign_slot(view_id, "slot_br")
 
     def get_current_tiling_layout(self):
-        output = self.get_focused_output()
+        output = self.socket.get_focused_output()
         wset = output["wset-index"]
         x = output["workspace"]["x"]
         y = output["workspace"]["y"]
-        return self.get_tiling_layout(wset, x, y)
+        return self.socket.get_tiling_layout(wset, x, y)
 
     def set_current_tiling_layout(self, layout):
-        output = self.get_focused_output()
+        output = self.socket.get_focused_output()
         wset = output["wset-index"]
         x = output["workspace"]["x"]
         y = output["workspace"]["y"]
-        return self.set_tiling_layout(wset, x, y, layout)
+        return self.socket.set_tiling_layout(wset, x, y, layout)
+
+    def toggle_minimize_from_app_id(self, app_id):
+        list_views = self.socket.list_views()
+        if not list_views:
+            return
+        ids = [i["id"] for i in list_views if i["app-id"] == app_id]
+        for id in ids:
+            if self.is_view_minimized(id):
+                self.socket.set_view_minimized(id, False)
+            else:
+                self.socket.set_view_minimized(id, True)
 

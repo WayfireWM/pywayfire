@@ -1,21 +1,19 @@
-from ..ipc import sock
+from ..ipc import WayfireSocket
+from ..extra.ipc_utils import WayfireUtils
+from ..extra.stipc import Stipc
+
+import subprocess
 from random import choice, randint, random, sample
 import threading
 import time
 from subprocess import Popen, PIPE, run
-from wayfire.core.ipc_utils import WayfireUtils
+
+sock = WayfireSocket()
+utils = WayfireUtils(sock)
+stipc = Stipc(sock)
+
 
 class Fuzzy:
-    def __init__(self):
-        # load all ipc functions from ipc.py
-        for name in dir(sock):
-            if not name.startswith("__"):
-                setattr(self, name, getattr(sock, name))
-        self.wutils = WayfireUtils()
-        for name in dir(self.wutils):
-            if not name.startswith("__"):
-                setattr(self, name, getattr(self.wutils, name))
-
     def test_random_press_key_with_modifiers(self, num_combinations=1):
         """
         Randomly generates key combinations and calls press_key function.
@@ -140,7 +138,7 @@ class Fuzzy:
             main_key = choice(keys)
             key_combination = modifier + main_key
             try:
-                self.press_key(key_combination)
+                stipc.press_key(key_combination)
             except:
                 continue
 
@@ -148,15 +146,15 @@ class Fuzzy:
         if view_id is None:
             view_id = self.test_random_view_id()
         actions = [
-            self.set_view_top_left,
-            self.set_view_top_right,
-            self.set_view_bottom_left,
-            self.set_view_right,
-            self.set_view_left,
-            self.set_view_bottom,
-            self.set_view_top,
-            self.set_view_center,
-            self.set_view_bottom_right,
+            utils.set_view_top_left,
+            utils.set_view_top_right,
+            utils.set_view_bottom_left,
+            utils.set_view_right,
+            utils.set_view_left,
+            utils.set_view_bottom,
+            utils.set_view_top,
+            utils.set_view_center,
+            utils.set_view_bottom_right,
         ]
         choice(actions)(view_id)
 
@@ -164,13 +162,13 @@ class Fuzzy:
         if view_id is None:
             view_id = self.test_random_view_id()
         actions = [
-            lambda: self.maximize(view_id),
-            lambda: self.set_fullscreen(view_id),
-            lambda: self.set_minimized(view_id, True),
-            lambda: self.set_minimized(view_id, False),
-            lambda: self.set_sticky(view_id, choice([True, False])),
-            lambda: self.send_to_back(view_id, choice([True, False])),
-            lambda: self.set_view_alpha(view_id, random() * 1.0),
+            lambda: utils.maximize(view_id),
+            lambda: sock.set_view_fullscreen(view_id),
+            lambda: sock.set_view_minimized(view_id, True),
+            lambda: sock.set_view_minimized(view_id, False),
+            lambda: sock.set_view_sticky(view_id, choice([True, False])),
+            lambda: sock.send_view_to_back(view_id, choice([True, False])),
+            lambda: sock.set_view_alpha(view_id, random() * 1.0),
         ]
         choice(actions)()
 
@@ -178,35 +176,35 @@ class Fuzzy:
         if view_id is None:
             view_id = self.test_random_view_id()
         actions = [
-            self.list_outputs,
-            self.list_wsets,
-            lambda: self.wset_info(view_id),
-            lambda: self.get_view(view_id),
-            lambda: self.get_view_info(view_id),
-            lambda: self.get_view_alpha(view_id),
-            self.list_input_devices,
-            self.get_workspaces_with_views,
-            self.get_workspaces_without_views,
-            self.get_views_from_active_workspace,
+            sock.list_outputs,
+            sock.list_wsets,
+            lambda: sock.wset_info(view_id),
+            lambda: sock.get_view(view_id),
+            lambda: sock.get_view_alpha(view_id),
+            sock.list_input_devices,
+            utils.get_workspaces_with_views,
+            utils.get_workspaces_without_views,
+            utils.get_views_from_active_workspace,
         ]
         choice(actions)()
 
     def test_set_view_position(self, view_id):
         if view_id is None:
             view_id = self.test_random_view_id()
-        self.set_view_top_left(view_id)
-        self.set_view_top_right(view_id)
-        self.set_view_bottom_left(view_id)
-        self.set_view_right(view_id)
-        self.set_view_left(view_id)
-        self.set_view_bottom(view_id)
-        self.set_view_top(view_id)
-        self.set_view_center(view_id)
-        self.set_view_bottom_right(view_id)
-        self.set_focus(view_id)
+        assert view_id
+        utils.set_view_top_left(view_id)
+        utils.set_view_top_right(view_id)
+        utils.set_view_bottom_left(view_id)
+        utils.set_view_right(view_id)
+        utils.set_view_left(view_id)
+        utils.set_view_bottom(view_id)
+        utils.set_view_top(view_id)
+        utils.set_view_center(view_id)
+        utils.set_view_bottom_right(view_id)
+        sock.set_focus(view_id)
 
     def test_random_view_id(self):
-        ids = self.list_ids()
+        ids = utils.list_ids()
         if ids:
             return choice(ids)
 
@@ -214,26 +212,26 @@ class Fuzzy:
         if view_id is None:
             view_id = self.test_random_view_id()
         actions = [
-            lambda: self.maximize(view_id),
-            lambda: self.set_fullscreen(view_id),
-            lambda: self.set_minimized(view_id, choice([True, False])),
-            lambda: self.set_sticky(view_id, choice([True, False])),
-            lambda: self.send_to_back(view_id, choice([True, False])),
-            lambda: self.set_view_alpha(view_id, random() * 1.0),
+            lambda: utils.maximize(view_id),
+            lambda: sock.set_view_fullscreen(view_id),
+            lambda: sock.set_view_minimized(view_id, choice([True, False])),
+            lambda: sock.set_view_sticky(view_id, choice([True, False])),
+            lambda: sock.send_view_to_back(view_id, choice([True, False])),
+            lambda: sock.set_view_alpha(view_id, random() * 1.0),
         ]
         choice(actions)()
 
     def test_move_cursor_and_click(self):
-        sumgeo = self.sum_geometry_resolution()
-        self.move_cursor(randint(100, sumgeo[0]), randint(100, sumgeo[1]))
-        self.click_button("BTN_LEFT", "full")
+        sumgeo = utils.sum_geometry_resolution()
+        stipc.move_cursor(randint(100, sumgeo[0]), randint(100, sumgeo[1]))
+        stipc.click_button("BTN_LEFT", "full")
 
     def test_move_cursor_and_drag_drop(self):
-        sumgeo = self.sum_geometry_resolution()
+        sumgeo = utils.sum_geometry_resolution()
         random_iterations = randint(1, 8)
 
         for _ in range(random_iterations):
-            self.click_and_drag(
+            stipc.click_and_drag(
                 "S-BTN_LEFT",
                 randint(1, sumgeo[0]),
                 randint(1, sumgeo[1]),
@@ -245,30 +243,30 @@ class Fuzzy:
     def test_list_info(self, view_id):
         if view_id is None:
             view_id = self.test_random_view_id()
-        self.list_outputs()
-        self.list_wsets()
-        # self.wset_info(view_id)
-        self.get_view(view_id)
-        self.get_view_info(view_id)
-        self.get_view_alpha(view_id)
-        self.list_input_devices()
-        self.get_workspaces_with_views()
-        self.get_workspaces_without_views()
-        self.get_views_from_active_workspace()
-        self.set_focus(view_id)
+        assert view_id
+        sock.list_outputs()
+        sock.list_wsets()
+        # sock.wset_info(view_id)
+        sock.get_view(view_id)
+        sock.get_view_alpha(view_id)
+        sock.list_input_devices()
+        utils.get_workspaces_with_views()
+        utils.get_workspaces_without_views()
+        utils.get_views_from_active_workspace()
+        sock.set_focus(view_id)
 
     def test_cube_plugin(self):
-        self.cube_activate()
-        self.cube_rotate_left()
-        self.cube_rotate_right()
-        self.click_button("BTN_LEFT", "full")
+        sock.cube_activate()
+        sock.cube_rotate_left()
+        sock.cube_rotate_right()
+        stipc.click_button("BTN_LEFT", "full")
 
     def test_toggle_switcher_view_plugin(self):
         for _ in range(2):
-            self.press_key("A-KEY_TAB")
+            stipc.press_key("A-KEY_TAB")
 
     def test_toggle_tile_plugin(self):
-        self.press_key("W-KEY_T")
+        stipc.press_key("W-KEY_T")
 
     def test_auto_rotate_plugin(self):
         keys_combinations = [
@@ -280,27 +278,27 @@ class Fuzzy:
 
         for _ in range(len(keys_combinations)):
             key_combination = choice(keys_combinations)
-            self.press_key(key_combination)
+            stipc.press_key(key_combination)
 
     def test_invert_plugin(self):
         for _ in range(2):
-            self.press_key("A-KEY_I")
+            stipc.press_key("A-KEY_I")
 
     def test_magnifier_plugin(self):
         for _ in range(2):
-            self.press_key("A-W-KEY_M")
+            stipc.press_key("A-W-KEY_M")
 
     def test_focus_change_plugin(self):
         for _ in range(2):
-            self.press_key("S-W-KEY_UP")
-            self.press_key("S-W-KEY_DOWN")
-            self.press_key("S-W-KEY_LEFT")
-            self.press_key("S-W-KEY_RIGHT")
+            stipc.press_key("S-W-KEY_UP")
+            stipc.press_key("S-W-KEY_DOWN")
+            stipc.press_key("S-W-KEY_LEFT")
+            stipc.press_key("S-W-KEY_RIGHT")
 
     def test_output_switcher_plugin(self):
         for _ in range(2):
-            self.press_key("A-KEY_O")
-            self.press_key("A-S-KEY_O")
+            stipc.press_key("A-KEY_O")
+            stipc.press_key("A-S-KEY_O")
 
     def test_low_priority_plugins(self, plugin=None):
         functions = {
@@ -319,9 +317,9 @@ class Fuzzy:
 
     def test_plugins(self, plugin=None):
         functions = {
-            "expo": (self.toggle_expo, ()),
-            "scale": (self.scale_toggle, ()),
-            "showdesktop": (self.toggle_showdesktop, ()),
+            "expo": (sock.toggle_expo, ()),
+            "scale": (sock.scale_toggle, ()),
+            "showdesktop": (sock.toggle_showdesktop, ()),
             "cube": (self.test_cube_plugin, ()),
             "switcherview": (self.test_toggle_switcher_view_plugin, ()),
             "autorotate": (self.test_auto_rotate_plugin, ()),
@@ -337,16 +335,40 @@ class Fuzzy:
             random_function(*args)
 
     def test_output(self):
-        current_outputs = self.list_outputs_ids()
+        current_outputs = utils.list_outputs_ids()
         if randint(1, 99) != 4:
             return
-        self.create_wayland_output()
-        for output_id in self.list_outputs_ids():
+        stipc.create_wayland_output()
+        for output_id in utils.list_outputs_ids():
             if output_id in current_outputs:
                 continue
             else:
-                name = self.query_output(output_id)["name"]
-                self.destroy_wayland_output(name)
+                name = sock.get_output(output_id)["name"]
+                stipc.destroy_wayland_output(name)
+
+    def dpms_status(self):
+        status = subprocess.check_output(["wlopm"]).decode().strip().split("\n")
+        dpms_status = {}
+        for line in status:
+            line = line.split()
+            dpms_status[line[0]] = line[1]
+        return dpms_status
+
+    def dpms(self, state, output_name=None):
+        if state == "off" and output_name is None:
+            outputs = [output["name"] for output in sock.list_outputs()]
+            for output in outputs:
+                subprocess.call("wlopm --off {}".format(output).split())
+        if state == "on" and output_name is None:
+            outputs = [output["name"] for output in sock.list_outputs()]
+            for output in outputs:
+                subprocess.call("wlopm --on {}".format(output).split())
+        if state == "on":
+            subprocess.call("wlopm --on {}".format(output_name).split())
+        if state == "off":
+            subprocess.call("wlopm --off {}".format(output_name).split())
+        if state == "toggle":
+            subprocess.call("wlopm --toggle {}".format(output_name).split())
 
     def test_turn_off_on_outputs(self):
         self.dpms("off")
@@ -401,7 +423,7 @@ class Fuzzy:
         if chosen_terminal:
             for _ in range(number_of_views_to_open):
                 if wayland_display is None:
-                    self.run_cmd(chosen_terminal)
+                    stipc.run_cmd(chosen_terminal)
                 else:
                     command = "export WAYLAND_DISPLAY={0} ; {1}".format(
                         wayland_display, chosen_terminal
@@ -409,11 +431,11 @@ class Fuzzy:
                     Popen(command, shell=True)
 
     def test_spam_go_workspace_set_focus(self):
-        list_ids = self.list_ids()
+        list_ids = utils.list_ids()
         num_items = randint(1, len(list_ids))
         random_views = sample(list_ids, num_items)
         for view_id in random_views:
-            self.go_workspace_set_focus(view_id)
+            utils.go_workspace_set_focus(view_id)
 
     def test_set_function_priority(self, functions):
         priority = []
@@ -425,7 +447,7 @@ class Fuzzy:
         random_run = randint(1, 8)
         if random_run > 4:
             for _ in range(1, randint(2, 100)):
-                self.delay_next_tx()
+                stipc.delay_next_tx()
 
     def test_random_views(self, view_id):
         functions = [
@@ -447,15 +469,15 @@ class Fuzzy:
         # Retrieve necessary data
         view_id = self.test_random_view_id()
         workspaces = (
-            [{"x": x, "y": y} for x, y in self.total_workspaces().values()]
-            if self.total_workspaces()
+            [{"x": x, "y": y} for x, y in utils.total_workspaces().values()]
+            if utils.total_workspaces()
             else []
         )
-        sumgeo = self.sum_geometry_resolution()
+        sumgeo = utils.sum_geometry_resolution()
 
         # Define functions to be executed
         functions = [
-            (self.go_workspace_set_focus, (view_id)),
+            (utils.go_workspace_set_focus, (view_id)),
             (self.test_move_cursor_and_click, ()),
             (self.test_plugins, (plugin,)),
             (self.test_low_priority_plugins, (plugin,)),
@@ -463,7 +485,7 @@ class Fuzzy:
             (self.test_output, ()),
             (self.test_random_views, (view_id)),
             (
-                self.configure_view,
+                sock.configure_view,
                 (
                     view_id,
                     randint(1, sumgeo[0]),
@@ -473,8 +495,8 @@ class Fuzzy:
                 ),
             ),
             (
-                self.set_workspace,
-                (choice(workspaces), view_id, choice(self.list_outputs_ids())),
+                sock.set_workspace,
+                (choice(workspaces), view_id, choice(utils.list_outputs_ids())),
             ),
         ]
 
@@ -532,9 +554,10 @@ class Fuzzy:
                     # lets close the focused output in the last iteration
                     # so it close while still there is actions going on
                     try:
-                        output_id = self.get_focused_output_id()
-                        name = self.query_output(output_id)["name"]
-                        self.destroy_wayland_output(name)
+                        output_id = utils.get_focused_output_id()
+                        if output_id:
+                            name = sock.get_output(output_id)["name"]
+                            stipc.destroy_wayland_output(name)
                     except Exception as e:
                         print(e)
 
