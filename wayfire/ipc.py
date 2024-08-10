@@ -261,10 +261,10 @@ class WayfireSocket:
         else:
             return message
 
-    def set_view_fullscreen(self, view_id):
+    def set_view_fullscreen(self, view_id, state):
         message = get_msg_template("wm-actions/set-fullscreen")
         message["data"]["view_id"] = view_id
-        message["data"]["state"] = True
+        message["data"]["state"] = state
         self.send_json(message)
 
     def toggle_expo(self):
