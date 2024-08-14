@@ -52,16 +52,14 @@ class WPE:
         message["data"]["view-id"] = view_id
         return self.socket.send_json(message)
 
-    def pin_view(self, view_id: int, layer: str, resize: bool, ws_x: int, ws_y: int):
+    def pin_view(self, view_id: int, layer: str, resize: bool, ws_x=None, ws_y=None):
         message = get_msg_template("pin-view/pin")
         message["data"]["view-id"] = view_id
         message["data"]["layer"] = layer
         message["data"]["resize"] = resize
-        if ws_x != None:
+        if ws_x is not None:
             message["data"]["x"] = ws_x
-            message["data"]["y"] = 0
-            if ws_y != None:
-                message["data"]["y"] = ws_y
+            message["data"]["y"] = ws_y if ws_y is not None else 0
         return self.socket.send_json(message)
 
     def unpin_view(self, view_id: int):
