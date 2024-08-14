@@ -312,6 +312,11 @@ class WayfireSocket:
         self.send_json(message)
         return True
 
+    def scale_toggle_all(self):
+        message = get_msg_template("scale/toggle_all")
+        self.send_json(message)
+        return True
+
     def cube_activate(self):
         message = get_msg_template("cube/activate")
         self.send_json(message)
@@ -324,12 +329,6 @@ class WayfireSocket:
 
     def cube_rotate_right(self):
         message = get_msg_template("cube/rorate_right")
-        self.send_json(message)
-        return True
-
-    def scale_leave(self):
-        # only works in the fork
-        message = get_msg_template("scale/leave")
         self.send_json(message)
         return True
 
