@@ -46,6 +46,14 @@ class WPE:
         message["data"]["saturation"] = saturation
         message["data"]["duration"] = duration
         return self.socket.send_json(message)
+    
+    def capture_view_shot(self, id, filename):
+        capture = get_msg_template("view-shot/capture")
+        if capture is None:
+            return
+        capture["data"]["view-id"] = id
+        capture["data"]["file"] = filename
+        return self.socket.send_json(capture)
 
     def ghost_view_toggle(self, view_id: int):
         message = get_msg_template("ghost/ghost_toggle")

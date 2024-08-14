@@ -100,14 +100,6 @@ class WayfireUtils:
             total_height += output["geometry"]["height"]
         return total_width, total_height
 
-    
-    def capture_view_shot(self, id, filename):
-        capture = get_msg_template("view-shot/capture")
-        if capture is None:
-            return
-        capture["data"]["view-id"] = id
-        capture["data"]["file"] = filename
-        return self.socket.send_json(capture)
 
     def get_active_workspace(self):
         data = self.get_active_workspace_info()
