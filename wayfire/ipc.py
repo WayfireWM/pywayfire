@@ -200,6 +200,12 @@ class WayfireSocket:
         message["data"]["id"] = id
         return self.send_json(message)
 
+    def send_view_to_wset(self, view_id: int, wset_index: int):
+        message = get_msg_template("wsets/send-view-to-wset")
+        message["data"]["view-id"] = view_id
+        message["data"]["wset-index"] = wset_index
+        return self.send_json(message)
+
     def watch(self, events: List[str] | None = None):
         method = "window-rules/events/watch"
         message = get_msg_template(method)
