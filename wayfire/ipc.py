@@ -206,6 +206,12 @@ class WayfireSocket:
         message["data"]["wset-index"] = wset_index
         return self.send_json(message)
 
+    def set_output_wset(self, output_id: int, wset_index: int):
+        message = get_msg_template("wsets/set-output-wset")
+        message["data"]["output-id"] = output_id
+        message["data"]["wset-index"] = wset_index
+        return self.send_json(message)
+
     def watch(self, events: List[str] | None = None):
         method = "window-rules/events/watch"
         message = get_msg_template(method)
