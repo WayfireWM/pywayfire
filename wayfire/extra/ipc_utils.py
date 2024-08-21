@@ -296,11 +296,10 @@ class WayfireUtils:
             yield dicts[index]
             index = (index + 1) % length
 
-    def get_next_workspace(self, workspace_x: int, workspace_y: int):
-        # Get the total workspaces from the method
+
+    def get_previous_workspace(self, workspace_x: int, workspace_y: int):
         total_workspaces = self.total_workspaces()
 
-        # Create a list to store unique workspace coordinates
         unique_workspaces = []
 
         # Extract and filter out duplicate workspace coordinates
@@ -316,7 +315,35 @@ class WayfireUtils:
                             if coords[1] == workspace_y and coords[0] == workspace_x), None)
 
         if active_index is None:
-            # Handle case where no active workspace is found
+            first_workspace = self.get_workspaces_with_views()
+            if first_workspace:
+                return first_workspace[0]
+            return None
+
+        # Calculate the index of the previous workspace cyclically
+        previous_index = (active_index - 1) % len(unique_workspaces)
+
+        # Return the previous workspace's coordinates
+        return unique_workspaces[previous_index]
+
+    def get_next_workspace(self, workspace_x: int, workspace_y: int):
+        total_workspaces = self.total_workspaces()
+
+        unique_workspaces = []
+
+        # Extract and filter out duplicate workspace coordinates
+        for coords in total_workspaces.values():
+            if coords not in unique_workspaces:
+                unique_workspaces.append(coords)
+
+        # Sort the list based on the 'x' and 'y' values, ensuring x is the primary sort key
+        unique_workspaces.sort(key=lambda d: (d[1], d[0]))  # Sort by y (row), then x (column)
+
+        # Find the index of the active workspace in the list
+        active_index = next((i for i, coords in enumerate(unique_workspaces)
+                            if coords[1] == workspace_y and coords[0] == workspace_x), None)
+
+        if active_index is None:
             first_workspace = self.get_workspaces_with_views()
             if first_workspace:
                 return first_workspace[0]
@@ -362,18 +389,26 @@ class WayfireUtils:
         print(f"Switching to workspace with views: ({workspace_x}, {workspace_y})")
         self.socket.set_workspace(workspace_x, workspace_y)
 
+
+
     def go_previous_workspace(self):
-        previous = 1
         current_workspace = self.get_active_workspace_number()
-        if current_workspace == 1:
-            previous = 9
-        else:
-            if current_workspace is not None:
-                previous = current_workspace - 1
-        workspace = self.total_workspaces()[previous]
-        workspace_x, workspace_y = workspace
+        if current_workspace is None:
+            return
+
+        current_workspace_coords = self.total_workspaces().get(current_workspace, None)
+        if current_workspace_coords is None:
+            return
+
+        # Retrieve the previous workspace coordinates
+        previous_workspace_coords = self.get_previous_workspace(*current_workspace_coords)
+        if previous_workspace_coords is None:
+            return
+
+        # Set the previous workspace
+        workspace_x, workspace_y = previous_workspace_coords
         self.socket.set_workspace(workspace_x, workspace_y)
-        return True
+
 
     def get_workspace_from_view(self, view_id):
         ws_with_views = self.get_workspaces_with_views()
