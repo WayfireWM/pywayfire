@@ -16,15 +16,15 @@ class WayfireUtils:
 
         return cursor_x, cursor_y
 
-    def set_focused_view_to_workspace_without_views(self):
-        view_id = self.get_focused_view_id()
-        empity_workspace = self.get_workspaces_without_views()
-        if empity_workspace:
-            #set the first empty workspace from the list
-            workspace_x, workspace_y = empity_workspace[0]
-            self.socket.set_workspace(workspace_x, workspace_y, view_id)
-        else:
-            return
+    def move_view_to_empty_workspace(self, view_id: int):
+        top_level_mapped_view = self.socket.get_view(view_id)["role"] == "toplevel"
+        assert top_level_mapped_view, f"Unable to move view with ID {view_id}: view not found or not top-level."
+
+        empty_workspace = self.get_workspaces_without_views()
+        assert empty_workspace, "No empty workspace available."
+
+        empty_workspace = empty_workspace[0]
+        self.socket.set_workspace(empty_workspace[0], empty_workspace[1], view_id)
 
     def tile_list_views(self, layout):
         if "view-id" in layout:
@@ -41,13 +41,6 @@ class WayfireUtils:
         for child in layout[split]:
             list += self.tile_list_views(child)
         return list
-
-    def response_handler(self, response, result, loop):
-        if response == 0:
-            print(f'screenshot of all outputs: {result.get("uri")}')
-            loop.stop()
-        else:
-            print("fail")
 
     def get_focused_output_views(self):
         list_views = self.socket.list_views()
@@ -139,12 +132,6 @@ class WayfireUtils:
         ):
             return True
 
-    def is_focused_view_fullscreen(self):
-        focused_view = self.socket.get_focused_view()
-        if focused_view is not None:
-            return focused_view.get("fullscreen")
-        return None
-
     def get_focused_view_role(self):
         focused_view_info = self.get_focused_view_info()
         if focused_view_info is not None:
@@ -175,22 +162,26 @@ class WayfireUtils:
             return focused_view.get("output-id")
         return None
 
-    def get_focused_view_title(self):
-        # the issue here is that if you get focused data directly
-        # sometimes it will get stuff from different roles like desktop-environment
-        # list-view will just filter all those stuff
-        view_id = self.socket.get_focused_view()
-        if view_id:
-            view_id = view_id["id"]
-        else:
-            return ""
-        list_view = self.socket.list_views()
-        title = [view["title"] for view in list_view if view_id == view["id"]]
-        if title:
-            return title[0]
-        else:
-            return ""
+    def list_filtered_views(self):
+        views = self.socket.list_views()
+        filtered_views = [
+            view for view in views
+            if view["role"] == "toplevel"
+            and view["app-id"] != "nil"
+            and view["pid"] != -1
+        ]
+        return filtered_views
 
+    def get_focused_view_title(self):
+        view = self.socket.get_focused_view()
+        if view:
+            if view in self.list_filtered_views():
+                return view["title"]
+            else:
+                return
+        else:
+            return
+ 
     def get_focused_view_type(self):
         return self.socket.get_focused_view()["type"]
 
@@ -337,24 +328,24 @@ class WayfireUtils:
         # Return the next workspace's coordinates
         return unique_workspaces[next_index]
 
-    
+
     def go_next_workspace_with_views(self):
         focused_output = self.socket.get_focused_output()
         current_x = focused_output['workspace']['x']
         current_y = focused_output['workspace']['y']
-        
+
         ws_with_views = self.get_workspaces_with_views()
-        
+
         if not ws_with_views:
             print("No workspaces with views found.")
             return
 
         # Extract unique workspaces with views
         unique_workspaces = { (ws['x'], ws['y']) for ws in ws_with_views }
-        
+
         # Ensure that unique_workspaces are sorted to maintain a consistent order
         sorted_workspaces = sorted(unique_workspaces, key=lambda d: (d[1], d[0]))  # Sort by y, then x
-        
+ 
         # Find the index of the current workspace in the sorted list of workspaces with views
         current_ws_index = next((i for i, (x, y) in enumerate(sorted_workspaces)
                                 if x == current_x and y == current_y), None)
@@ -391,15 +382,15 @@ class WayfireUtils:
                 if ws["view-id"] == view_id:
                     return {"x": ws["x"], "y": ws["y"]}
 
-    def has_workspace_views(self, ws):
-        ws_with_views = self.get_workspaces_with_views()
-        if ws_with_views:
-            for wwv in ws_with_views:
-                del wwv["view-id"]
-                if wwv == ws:
+    def has_workspace_views(self, workspace_x, workspace_y):
+        ws_with_views_list = self.get_workspaces_with_views()
+        if ws_with_views_list:
+            for workspace_with_views in ws_with_views_list:
+                del workspace_with_views["view-id"]
+                x, y = workspace_with_views.values()
+                if [x, y] == [workspace_x, workspace_y]:
                     return True
         return False
-
 
     def get_workspaces_with_views(self):
         focused_output = self.socket.get_focused_output()
@@ -477,7 +468,7 @@ class WayfireUtils:
     def get_views_from_active_workspace(self):
         active_workspace = self.get_active_workspace_info()
         workspace_with_views = self.get_workspaces_with_views()
-        
+ 
         if not workspace_with_views or not active_workspace:
             return []
 
@@ -486,7 +477,7 @@ class WayfireUtils:
             for view in workspace_with_views
             if view["x"] == active_workspace["x"] and view["y"] == active_workspace["y"]
         ]
-    
+ 
 
     def close_focused_view(self):
         view_id = self.socket.get_focused_view()["id"]
@@ -608,21 +599,23 @@ class WayfireUtils:
 
     def disable_input_device(self, args):
         device_id = self.find_device_id(args)
+        assert device_id is not None, f"Device with arguments {args} not found."
         msg = self.socket.configure_input_device(device_id, False)
         return msg
 
     def enable_input_device(self, args):
         device_id = self.find_device_id(args)
+        assert device_id is not None, f"Device with arguments {args} not found."
         msg = self.socket.configure_input_device(device_id, True)
         return msg
 
-    def maximize(self, view_id: int):
+    def set_view_maximized(self, view_id: int):
         self.socket.assign_slot(view_id, "slot_c")
 
     def maximize_all_views_from_active_workspace(self):
         for view_id in self.get_views_from_active_workspace():
             if not self.is_view_fullscreen(view_id):
-                self.maximize(view_id)
+                self.set_view_maximized(view_id)
 
     def total_workspaces(self):
         winfo = self.get_active_workspace_info()
