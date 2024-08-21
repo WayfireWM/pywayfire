@@ -1,7 +1,7 @@
 import socket
 import json as js
 import os
-from typing import Any, List
+from typing import Any, List, Optional
 from wayfire.core.template import get_msg_template, geometry_to_json
 
 
@@ -45,7 +45,7 @@ class WayfireSocket:
     def close(self):
         self.client.close()
 
-    def read_exact(self, n):
+    def read_exact(self, n: int):
         response = bytes()
         while n > 0:
             read_this_time = self.client.recv(n)
@@ -74,13 +74,13 @@ class WayfireSocket:
             return self.pending_events.pop(0)
         return self.read_message()
 
-    def create_headless_output(self, width, height):
+    def create_headless_output(self, width: int, height: int):
         message = get_msg_template("wayfire/create-headless-output")
         message["data"]["width"] = width
         message["data"]["height"] = height
         return self.send_json(message)
 
-    def destroy_headless_output(self, output_name=None, output_id=None):
+    def destroy_headless_output(self, output_name: Optional[str]=None, output_id: Optional[int]=None):
         assert output_name is not None or output_id is not None
         message = get_msg_template("wayfire/destroy-headless-output")
         if output_name is not None:
@@ -98,11 +98,11 @@ class WayfireSocket:
         self,
         binding: str,
         *,
-        call_method=None,
+        call_method: Optional[str]=None,
         call_data=None,
-        command=None,
-        mode=None,
-        exec_always=False,
+        command: Optional[str]=None,
+        mode: Optional[str]=None,
+        exec_always: bool=False,
     ):
         message = get_msg_template("command/register-binding")
         message["data"]["binding"] = binding
@@ -128,7 +128,7 @@ class WayfireSocket:
         message = get_msg_template("command/clear-bindings")
         return self.send_json(message)
 
-    def get_option_value(self, option):
+    def get_option_value(self, option: str):
         message = get_msg_template("wayfire/get-config-option")
         message["data"]["option"] = option
         return self.send_json(message)
@@ -196,7 +196,7 @@ class WayfireSocket:
         message = get_msg_template("window-rules/list-wsets")
         return self.send_json(message)
 
-    def wset_info(self, id):
+    def wset_info(self, id: int):
         message = get_msg_template("window-rules/wset-info")
         message["data"]["id"] = id
         return self.send_json(message)
@@ -246,18 +246,18 @@ class WayfireSocket:
         message["data"]["id"] = view_id
         return self.send_json(message)
 
-    def get_view(self, view_id):
+    def get_view(self, view_id: int):
         message = get_msg_template("window-rules/view-info")
         message["data"]["id"] = view_id
         return self.send_json(message)["info"]
 
-    def configure_input_device(self, id, enabled: bool):
+    def configure_input_device(self, id: int, enabled: bool):
         message = get_msg_template("input/configure-device")
         message["data"]["id"] = id
         message["data"]["enabled"] = enabled
         return self.send_json(message)
 
-    def close_view(self, view_id):
+    def close_view(self, view_id: int):
         message = get_msg_template("window-rules/close-view")
         message["data"]["id"] = view_id
         return self.send_json(message)
@@ -274,7 +274,7 @@ class WayfireSocket:
         else:
             return message
 
-    def set_view_fullscreen(self, view_id, state):
+    def set_view_fullscreen(self, view_id: int, state: bool):
         message = get_msg_template("wm-actions/set-fullscreen")
         message["data"]["view_id"] = view_id
         message["data"]["state"] = state
@@ -284,15 +284,14 @@ class WayfireSocket:
         message = get_msg_template("expo/toggle")
         self.send_json(message)
 
-    def set_workspace(self, workspace, view_id=None, output_id=None):
-        x, y = workspace["x"], workspace["y"]
-        focused_output = self.get_focused_output()
+    def set_workspace(self, workspace_x: int, workspace_y: int, view_id: Optional[int]=None, output_id: Optional[int]=None):
         if output_id is None:
+            focused_output = self.get_focused_output()
             output_id = focused_output["id"]
 
         message = get_msg_template("vswitch/set-workspace")
-        message["data"]["x"] = x
-        message["data"]["y"] = y
+        message["data"]["x"] = workspace_x
+        message["data"]["y"] = workspace_y
         message["data"]["output-id"] = output_id
         if view_id is not None:
             message["data"]["view-id"] = view_id
@@ -302,19 +301,19 @@ class WayfireSocket:
         message = get_msg_template("wm-actions/toggle_showdesktop")
         return self.send_json(message)
 
-    def set_view_sticky(self, view_id, state):
+    def set_view_sticky(self, view_id: int, state: bool):
         message = get_msg_template("wm-actions/set-sticky")
         message["data"]["view_id"] = view_id
         message["data"]["state"] = state
         return self.send_json(message)
 
-    def send_view_to_back(self, view_id, state):
+    def send_view_to_back(self, view_id: int, state: bool):
         message = get_msg_template("wm-actions/send-to-back")
         message["data"]["view_id"] = view_id
         message["data"]["state"] = state
         return self.send_json(message)
 
-    def set_view_minimized(self, view_id, state):
+    def set_view_minimized(self, view_id: int, state: bool):
         message = get_msg_template("wm-actions/set-minimized")
         message["data"]["view_id"] = view_id
         message["data"]["state"] = state
@@ -341,7 +340,7 @@ class WayfireSocket:
         return True
 
     def cube_rotate_right(self):
-        message = get_msg_template("cube/rorate_right")
+        message = get_msg_template("cube/rotate_right")
         self.send_json(message)
         return True
 
@@ -351,14 +350,14 @@ class WayfireSocket:
         message["data"]["state"] = always_on_top
         return self.send_json(message)
 
-    def set_view_alpha(self, view_id, alpha: float):
+    def set_view_alpha(self, view_id: int, alpha: float):
         message = get_msg_template("wf/alpha/set-view-alpha")
         message["data"] = {}
         message["data"]["view-id"] = view_id
         message["data"]["alpha"] = alpha
         return self.send_json(message)
 
-    def get_view_alpha(self, view_id):
+    def get_view_alpha(self, view_id: int):
         message = get_msg_template("wf/alpha/get-view-alpha")
         message["data"]["view-id"] = view_id
         return self.send_json(message)
