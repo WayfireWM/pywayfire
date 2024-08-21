@@ -60,7 +60,12 @@ class WayfireSocket:
         rlen = int.from_bytes(self.read_exact(4), byteorder="little")
         response_message = self.read_exact(rlen)
         response = js.loads(response_message)
-        if "error" in response:
+
+        if "error" in response and response["error"] == "No such method found!":
+            raise Exception(f"Method {response['method']} is not available. \
+                    Please ensure that the '{self._wayfire_plugin_from_method(response['method'])}' Wayfire plugin is enabled. \
+                    Once enabled, restart Wayfire to ensure that ipc was correctly loaded.")
+        elif "error" in response:
             raise Exception(response["error"])
         return response
 
@@ -176,10 +181,6 @@ class WayfireSocket:
                 self.pending_events.append(response)
                 continue
 
-            if "error" in response and response["error"] == "No such method found!":
-                raise Exception(f"Method {msg['method']} is not available. \
-                        Please ensure that the '{self._wayfire_plugin_from_method(msg['method'])}' Wayfire plugin is enabled. \
-                        Once enabled, restart Wayfire to ensure that ipc was correctly loaded.")
             return response
 
     def get_output(self, output_id: int):
