@@ -665,6 +665,26 @@ class WayfireUtils:
     def set_view_bottom_right(self, view_id: int):
         self._socket.assign_slot(view_id, "slot_br")
 
+    def send_view_to_output(self, view_id: int, output_name: str):
+        """
+        Sends a view to a specified output.
+
+        Args:
+            view_id (int): The ID of the view to be sent.
+            output_name (str): The name of the output to which the view will be sent.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the output name does not correspond to a valid output.
+        """
+        output_id = self.get_output_id_by_name(output_name)
+        if output_id:
+            wset = self._socket.get_output(output_id)["wset-index"]
+            if view_id:
+                self._socket.send_view_to_wset(view_id, wset)
+
     def get_current_tiling_layout(self):
         output = self._socket.get_focused_output()
         wset = output["wset-index"]
