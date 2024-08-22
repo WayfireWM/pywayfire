@@ -323,7 +323,6 @@ class WayfireUtils:
         ws_with_views = self.get_workspaces_with_views()
 
         if not ws_with_views:
-            print("No workspaces with views found.")
             return
 
         # Extract unique workspaces with views
@@ -336,7 +335,6 @@ class WayfireUtils:
         current_ws_index = next((i for i, (x, y) in enumerate(sorted_workspaces)
                                 if x == current_x and y == current_y), None)
         if current_ws_index is None:
-            print("Current workspace is not in the list of workspaces with views.")
             return
 
         # Calculate the index of the next workspace cyclically
@@ -345,7 +343,6 @@ class WayfireUtils:
 
         # Set the next workspace
         workspace_x, workspace_y = next_ws
-        print(f"Switching to workspace with views: ({workspace_x}, {workspace_y})")
         self.socket.set_workspace(workspace_x, workspace_y)
 
     def go_previous_workspace(self):
