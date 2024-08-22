@@ -43,45 +43,22 @@ class WayfireUtils:
         return list
 
     def get_focused_output_views(self):
-        list_views = self.socket.list_views()
-        if not list_views:
-            return
-        focused_output = self.socket.get_focused_output()
-        if not focused_output:
-            return
-        output_views = [
-            view for view in list_views if view["output-id"] == focused_output["id"]
+        return [
+            view for view in self.socket.list_views()
+            if view["output-id"] == self.socket.get_focused_output()["id"]
         ]
-        return output_views
 
     def list_pids(self):
-        list_views = self.socket.list_views()
-        if not list_views:
-            return
-        list_pids = []
-        for view in list_views:
-            list_pids.append(view["pid"])
-        return list_pids
+        return [view["pid"] for view in self.socket.list_views() if view["pid"] != -1]
 
     def list_ids(self):
-        list_views = self.socket.list_views()
-        if not list_views:
-            return []
-        list_ids = []
-        for view in list_views:
-            list_ids.append(view["id"])
-        return list_ids
+        return [view["id"] for view in self.socket.list_views()]
 
     def list_outputs_ids(self):
-        outputs = self.socket.list_outputs()
-        if outputs:
-            return [i["id"] for i in outputs]
-        return []
+        return [i["id"] for i in self.socket.list_outputs()]
 
     def list_outputs_names(self):
-        outputs = self.socket.list_outputs()
-        if outputs:
-            return [i["name"] for i in outputs]
+        return [i["name"] for i in self.socket.list_outputs()]
 
     def sum_geometry_resolution(self):
         outputs = self.socket.list_outputs()
@@ -108,9 +85,6 @@ class WayfireUtils:
                 self.socket.set_workspace(workspace_x, workspace_y)
         self.socket.set_focus(view_id)
 
-    def get_focused_view_info(self):
-        id = self.get_focused_view_id()
-        return [i for i in self.socket.list_views() if i["id"] == id][0]
 
     def get_focused_view_pid(self):
         view = self.socket.get_focused_view()
@@ -133,34 +107,29 @@ class WayfireUtils:
             return True
 
     def get_focused_view_role(self):
-        focused_view_info = self.get_focused_view_info()
+        focused_view_info = self.socket.get_focused_view()
         if focused_view_info is not None:
             return focused_view_info.get("role")
-        return None
 
     def get_focused_view_bbox(self):
         focused_view = self.socket.get_focused_view()
         if focused_view is not None:
             return focused_view.get("bbox")
-        return None
 
     def get_focused_view_layer(self):
         focused_view = self.socket.get_focused_view()
         if focused_view is not None:
             return focused_view.get("layer")
-        return None
 
     def get_focused_view_id(self):
         focused_view = self.socket.get_focused_view()
         if focused_view is not None:
             return focused_view.get("id")
-        return None
 
     def get_focused_view_output(self):
         focused_view = self.socket.get_focused_view()
         if focused_view is not None:
             return focused_view.get("output-id")
-        return None
 
     def list_filtered_views(self):
         views = self.socket.list_views()
@@ -172,16 +141,15 @@ class WayfireUtils:
         ]
         return filtered_views
 
+
     def get_focused_view_title(self):
-        view = self.socket.get_focused_view()
-        if view:
-            if view in self.list_filtered_views():
-                return view["title"]
-            else:
-                return
-        else:
-            return
- 
+        focused_view = self.socket.get_focused_view()
+        return (
+            focused_view["title"]
+            if focused_view and focused_view in self.list_filtered_views()
+            else None
+        )
+
     def get_focused_view_type(self):
         return self.socket.get_focused_view()["type"]
 
@@ -289,14 +257,6 @@ class WayfireUtils:
         if next_workspace_id:
             self.socket.set_workspace(workspace_x, workspace_y)
 
-    def iterate_dicts(self, dicts: dict):
-        index = 0
-        length = len(dicts)
-        while True:
-            yield dicts[index]
-            index = (index + 1) % length
-
-
     def get_previous_workspace(self, workspace_x: int, workspace_y: int):
         total_workspaces = self.total_workspaces()
 
@@ -355,7 +315,6 @@ class WayfireUtils:
         # Return the next workspace's coordinates
         return unique_workspaces[next_index]
 
-
     def go_next_workspace_with_views(self):
         focused_output = self.socket.get_focused_output()
         current_x = focused_output['workspace']['x']
@@ -389,8 +348,6 @@ class WayfireUtils:
         print(f"Switching to workspace with views: ({workspace_x}, {workspace_y})")
         self.socket.set_workspace(workspace_x, workspace_y)
 
-
-
     def go_previous_workspace(self):
         current_workspace = self.get_active_workspace_number()
         if current_workspace is None:
@@ -408,7 +365,6 @@ class WayfireUtils:
         # Set the previous workspace
         workspace_x, workspace_y = previous_workspace_coords
         self.socket.set_workspace(workspace_x, workspace_y)
-
 
     def get_workspace_from_view(self, view_id):
         ws_with_views = self.get_workspaces_with_views()
@@ -499,7 +455,6 @@ class WayfireUtils:
 
         return best_workspace
 
-
     def get_views_from_active_workspace(self):
         active_workspace = self.get_active_workspace_info()
         workspace_with_views = self.get_workspaces_with_views()
@@ -513,18 +468,6 @@ class WayfireUtils:
             if view["x"] == active_workspace["x"] and view["y"] == active_workspace["y"]
         ]
  
-
-    def close_focused_view(self):
-        view_id = self.socket.get_focused_view()["id"]
-        self.socket.close_view(view_id)
-
-    def get_view_info(self, view_id):
-        info = [i for i in self.socket.list_views() if i["id"] == view_id]
-        if info:
-            return info[0]
-        else:
-            return
-
     def get_view_output_id(self, view_id: int):
         view = self.socket.get_view(view_id)
         if view is not None:
@@ -592,13 +535,13 @@ class WayfireUtils:
         return None
 
     def get_view_role(self, view_id: int):
-        view_info = self.get_view_info(view_id)
+        view_info = self.socket.get_view(view_id)
         if view_info is not None:
             return view_info.get("role")
         return None
 
     def get_view_bbox(self, view_id: int):
-        view_info = self.get_view_info(view_id)
+        view_info = self.socket.get_view(view_id)
         if view_info is not None:
             return view_info.get("bbox")
         return None
@@ -608,10 +551,6 @@ class WayfireUtils:
         if view_layer_content:
             return view_layer_content.get("layer")
         return None
-
-    def maximize_focused_view(self):
-        view = self.socket.get_focused_view()
-        self.socket.assign_slot(view["id"], "slot_c")
 
     def find_view_by_pid(self, pid: int):
         lviews = self.socket.list_views()
@@ -630,7 +569,7 @@ class WayfireUtils:
                 or dev["type"] == name_or_id_or_type
             ):
                 return dev["id"]
-        return None
+        assert False, f"Device with name, ID, or type '{name_or_id_or_type}' not found."
 
     def disable_input_device(self, args):
         device_id = self.find_device_id(args)
@@ -646,11 +585,6 @@ class WayfireUtils:
 
     def set_view_maximized(self, view_id: int):
         self.socket.assign_slot(view_id, "slot_c")
-
-    def maximize_all_views_from_active_workspace(self):
-        for view_id in self.get_views_from_active_workspace():
-            if not self.is_view_fullscreen(view_id):
-                self.set_view_maximized(view_id)
 
     def total_workspaces(self):
         winfo = self.get_active_workspace_info()
