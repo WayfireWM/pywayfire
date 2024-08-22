@@ -1,4 +1,5 @@
 from itertools import filterfalse
+from typing import Any, List, Optional
 from wayfire import WayfireSocket
 from wayfire.extra.stipc import Stipc
 
@@ -559,13 +560,52 @@ class WayfireUtils:
             return view_layer_content.get("layer")
         return None
 
-    def find_view_by_pid(self, pid: int):
-        lviews = self._socket.list_views()
-        if not lviews:
-            return
-        view = [view for view in lviews if view["pid"] == pid]
-        if view:
-            return view[0]
+    def find_views(self, value: Any, key: Optional[str] = None) -> Optional[List[dict]]:
+        """
+        Find and return a list of views from the Wayfire compositor that match a specified value.
+
+        The function searches through the list of views obtained from the Wayfire socket. 
+        It can either search for a value within a specific key in the view dictionaries 
+        or search across all key-value pairs if no key is specified.
+
+        Args:
+            value: The value to search for. Can be a string, number, or other data type.
+            key (Optional[str], optional): The specific key in the view dictionary to search within. 
+                                           If not provided, the function will search all key-value pairs.
+
+        Returns:
+            Optional[List[dict]]: A list of views (dictionaries) where the specified value is found.
+                                  Returns None if no matching views are found.
+
+        Raises:
+            TypeError: If an integer is passed as `value` without a specified `key`.
+
+        Example:
+            views = self.find_views('kitty', key='app-id')
+            # This will return all views where the app-id is 'kitty'.
+
+            views = self.find_views('IPython')
+            # This will return all views where any value, including titles, matches 'IPython'.
+        """
+
+        if isinstance(value, int) and key is None:
+            raise TypeError(
+                "Cannot use an integer as 'value' without specifying a 'key'. "
+                "Integers are only allowed with a specified 'key'."
+            )
+
+        def value_matches(val: Any, item: Any) -> bool:
+            if isinstance(item, (str, list, dict, set, tuple)):
+                return val in item
+            return item == val
+
+        views: List[dict] = [
+            view for view in self._socket.list_views()
+            if (key and key in view and value_matches(value, view[key])) or
+               (not key and any(value_matches(value, v) for v in view.values()))
+        ]
+
+        return views if views else None
 
     def find_device_id(self, name_or_id_or_type: str):
         devices = self._socket.list_input_devices()
