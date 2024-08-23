@@ -456,36 +456,6 @@ class WayfireUtils:
         all_workspaces = list(total_workspaces.values())
         return list(filterfalse(lambda x: x in workspace_with_views, all_workspaces))
 
-    def get_workspace_coordinates(self, view_info):
-        focused_output = self._socket.get_focused_output()
-        monitor = focused_output["geometry"]
-        max_intersection_area = 0
-        best_workspace = None
-
-        # Get the current workspace grid dimensions
-        grid_width = focused_output["workspace"]["grid_width"]
-        grid_height = focused_output["workspace"]["grid_height"]
-        current_ws_x = focused_output["workspace"]["x"]
-        current_ws_y = focused_output["workspace"]["y"]
-
-        # Iterate through all possible workspaces
-        for ws_x in range(grid_width):
-            for ws_y in range(grid_height):
-                # Calculate intersection area with the given view
-                intersection_area = self._calculate_intersection_area(
-                    view_info["geometry"],
-                    ws_x - current_ws_x,
-                    ws_y - current_ws_y,
-                    monitor
-                )
-
-                # Track the workspace with the maximum intersection area
-                if intersection_area > max_intersection_area:
-                    max_intersection_area = intersection_area
-                    best_workspace = {"x": ws_x, "y": ws_y}
-
-        return best_workspace
-
     def get_views_from_active_workspace(self):
         active_workspace = self.get_active_workspace_info()
         workspace_with_views = self.get_workspaces_with_views()
