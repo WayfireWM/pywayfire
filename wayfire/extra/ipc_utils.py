@@ -22,7 +22,7 @@ class WayfireUtils:
     def center_cursor_on_view(self, view_id):
         view = self._socket.get_view(view_id)
         output_id = view["output-id"]
-        view_geometry = view["geometry", Tuple]
+        view_geometry = view["geometry"]
         output_geometry = self._socket.get_output(output_id)["geometry"]
         cursor_x, cursor_y = self._find_view_middle_cursor_position(
             view_geometry, output_geometry
