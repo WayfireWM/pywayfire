@@ -103,6 +103,52 @@ class WayfireUtils:
     def list_outputs_names(self):
         return [i["name"] for i in self._socket.list_outputs()]
 
+    def _get_plugins(self) -> List[str]:
+        """
+        Fetches the current list of plugins from the socket and parses it into a list.
+
+        :return: A list of plugin names.
+        """
+        plugins_value = self._socket.get_option_value("core/plugins")["value"]
+        return plugins_value.split()
+
+    def _set_plugins(self, plugins: List[str]) -> None:
+        """
+        Updates the list of plugins by converting the list to a space-separated string 
+        and setting it via the socket.
+
+        :param plugins: A list of plugin names to be set.
+        """
+        plugins_value = " ".join(plugins)
+        self._socket.set_option_values({"core/plugins": plugins_value})
+
+    def set_plugin(self, plugin_name: str, enabled: Optional[bool] = True) -> None:
+        """
+        Enables or disables a plugin based on the 'enabled' flag.
+
+        :param plugin_name: The name of the plugin to set.
+        :param enabled: If True, enables the plugin. If False, disables it. Defaults to True.
+        """
+        plugins = self._get_plugins()
+
+        if enabled:
+            if plugin_name not in plugins:
+                plugins.append(plugin_name)
+        else:
+            plugins = [plugin for plugin in plugins if plugin_name not in plugin]
+
+        self._set_plugins(plugins)
+
+    def is_plugin_enabled(self, plugin_name: str) -> bool:
+        """
+        Checks whether a plugin is enabled.
+
+        :param plugin_name: The name of the plugin to check.
+        :return: True if the plugin is enabled, False otherwise.
+        """
+        plugins = self._get_plugins()
+        return plugin_name in plugins
+
     def _sum_geometry_resolution(self):
         outputs = self._socket.list_outputs()
         total_width = 0
