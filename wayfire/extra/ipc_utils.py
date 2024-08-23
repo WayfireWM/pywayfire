@@ -1,5 +1,5 @@
 from itertools import filterfalse
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 from wayfire import WayfireSocket
 from wayfire.extra.stipc import Stipc
 
@@ -22,7 +22,7 @@ class WayfireUtils:
     def center_cursor_on_view(self, view_id):
         view = self._socket.get_view(view_id)
         output_id = view["output-id"]
-        view_geometry = view["geometry"]
+        view_geometry = view["geometry", Tuple]
         output_geometry = self._socket.get_output(output_id)["geometry"]
         cursor_x, cursor_y = self._find_view_middle_cursor_position(
             view_geometry, output_geometry
@@ -240,35 +240,30 @@ class WayfireUtils:
             pid = view["pid"]
             return pid
 
-    def go_next_workspace(self):
-        all_workspaces = self._total_workspaces()
-        if not all_workspaces:
-            return
+    def _get_adjacent_workspace(self, workspace_x: int, workspace_y: int, direction: str) -> Optional[Tuple[int, int]]:
+        """
+        Retrieves the coordinates of an adjacent workspace based on the specified direction.
 
-        workspaces = list(all_workspaces.values())
-        active_workspace = self._socket.get_focused_output()["workspace"]
+        This function finds the workspace coordinates adjacent to the given `workspace_x` and `workspace_y`
+        based on the provided `direction`. The function handles three directions:
+        - "current": Returns the current workspace coordinates.
+        - "previous": Returns the coordinates of the previous workspace in the sorted list.
+        - "next": Returns the coordinates of the next workspace in the sorted list.
 
-        # Find the index of the current active workspace
-        current_index = workspaces.index([active_workspace["y"], active_workspace["x"]])
+        The list of unique workspaces is sorted by row (y) and then column (x) to determine adjacency.
 
-        # Calculate the index of the next workspace
-        next_index = (current_index + 1) % len(workspaces)
+        Parameters:
+        - workspace_x (int): The x-coordinate of the current workspace.
+        - workspace_y (int): The y-coordinate of the current workspace.
+        - direction (str): The direction to move. Should be one of 'current', 'previous', or 'next'.
 
-        # Get the next workspace
-        workspace_x, workspace_y = workspaces[next_index]
+        Returns:
+        - Optional[Tuple[int, int]]: The coordinates of the adjacent workspace as a tuple (x, y),
+          or `None` if the direction is invalid or if no adjacent workspace is found.
 
-        # Find the identifier of the next workspace
-        next_workspace_id = None
-        for key, value in all_workspaces.items():
-            if value == [workspace_x, workspace_y]:
-                next_workspace_id = key
-                break
-
-        # Set the next workspace
-        if next_workspace_id:
-            self._socket.set_workspace(workspace_x, workspace_y)
-
-    def _get_previous_workspace(self, workspace_x: int, workspace_y: int):
+        Raises:
+        - ValueError: If an invalid direction is specified.
+        """
         total_workspaces = self._total_workspaces()
 
         unique_workspaces = []
@@ -291,88 +286,75 @@ class WayfireUtils:
                 return first_workspace[0]
             return None
 
-        # Calculate the index of the previous workspace cyclically
-        previous_index = (active_index - 1) % len(unique_workspaces)
+        if direction == "current":
+            return unique_workspaces[active_index]
+        elif direction == "previous":
+            adjacent_index = (active_index - 1) % len(unique_workspaces)
+        elif direction == "next":
+            # Calculate the index of the next workspace cyclically
+            adjacent_index = (active_index + 1) % len(unique_workspaces)
+        else:
+            raise ValueError("Invalid direction specified. Use 'current', 'previous', or 'next'.")
 
-        # Return the previous workspace's coordinates
-        return unique_workspaces[previous_index]
+        return unique_workspaces[adjacent_index]
 
-    def _get_next_workspace(self, workspace_x: int, workspace_y: int):
-        total_workspaces = self._total_workspaces()
+    def _get_previous_workspace(self, workspace_x: int, workspace_y: int) -> Optional[Tuple[int, int]]:
+        return self._get_adjacent_workspace(workspace_x, workspace_y, "previous")
 
-        unique_workspaces = []
+    def _get_next_workspace(self, workspace_x: int, workspace_y: int) -> Optional[Tuple[int, int]]:
+        return self._get_adjacent_workspace(workspace_x, workspace_y, "next")
 
-        # Extract and filter out duplicate workspace coordinates
-        for coords in total_workspaces.values():
-            if coords not in unique_workspaces:
-                unique_workspaces.append(coords)
+    def _get_next_workspace_with_views(self, current_x: int, current_y: int):
+        return self.get_workspaces_with_views(current_x, current_y, "next")
 
-        # Sort the list based on the 'x' and 'y' values, ensuring x is the primary sort key
-        unique_workspaces.sort(key=lambda d: (d[1], d[0]))  # Sort by y (row), then x (column)
+    def _get_previous_workspace_with_views(self, current_x: int, current_y: int):
+        return self.get_workspaces_with_views(current_x, current_y, "previous")
 
-        # Find the index of the active workspace in the list
-        active_index = next((i for i, coords in enumerate(unique_workspaces)
-                            if coords[1] == workspace_y and coords[0] == workspace_x), None)
-
-        if active_index is None:
-            first_workspace = self.get_workspaces_with_views()
-            if first_workspace:
-                return first_workspace[0]
-            return None
-
-        # Calculate the index of the next workspace cyclically
-        next_index = (active_index + 1) % len(unique_workspaces)
-
-        # Return the next workspace's coordinates
-        return unique_workspaces[next_index]
-
-    def go_next_workspace_with_views(self):
+    def _go_workspace(self, direction: str, with_views: bool = False):
+        """
+        Navigate to the previous, next, or next workspace with views based on the given direction.
+ 
+        :param direction: 'previous' to go to the previous workspace, 'next' to go to the next workspace.
+        :param with_views: If True, go to the next workspace with views instead of any workspace.
+        """
         focused_output = self._socket.get_focused_output()
         current_x = focused_output['workspace']['x']
         current_y = focused_output['workspace']['y']
 
-        ws_with_views = self.get_workspaces_with_views()
-
-        if not ws_with_views:
-            return
-
-        # Extract unique workspaces with views
-        unique_workspaces = { (ws['x'], ws['y']) for ws in ws_with_views }
-
-        # Ensure that unique_workspaces are sorted to maintain a consistent order
-        sorted_workspaces = sorted(unique_workspaces, key=lambda d: (d[1], d[0]))  # Sort by y, then x
+        if with_views:
+            if direction == 'next':
+                target_workspace_coords = self._get_next_workspace_with_views(current_x, current_y)
+            elif direction == 'previous':
+                target_workspace_coords = self._get_previous_workspace_with_views(current_x, current_y)
+            else:
+                print("Invalid direction for workspaces with views. Use 'next' or 'previous'.")
+                return
+        else:
+            if direction == 'previous':
+                target_workspace_coords = self._get_previous_workspace(current_x, current_y)
+            elif direction == 'next':
+                target_workspace_coords = self._get_next_workspace(current_x, current_y)
+            else:
+                print("Invalid direction. Use 'previous' or 'next'.")
+                return
  
-        # Find the index of the current workspace in the sorted list of workspaces with views
-        current_ws_index = next((i for i, (x, y) in enumerate(sorted_workspaces)
-                                if x == current_x and y == current_y), None)
-        if current_ws_index is None:
+        if target_workspace_coords is None:
             return
 
-        # Calculate the index of the next workspace cyclically
-        next_index = (current_ws_index + 1) % len(sorted_workspaces)
-        next_ws = sorted_workspaces[next_index]
-
-        # Set the next workspace
-        workspace_x, workspace_y = next_ws
+        workspace_x, workspace_y = target_workspace_coords
         self._socket.set_workspace(workspace_x, workspace_y)
 
     def go_previous_workspace(self):
-        current_workspace = self.get_active_workspace_number()
-        if current_workspace is None:
-            return
+        self._go_workspace("previous")
 
-        current_workspace_coords = self._total_workspaces().get(current_workspace, None)
-        if current_workspace_coords is None:
-            return
+    def go_next_workspace(self):
+        self._go_workspace("next")
 
-        # Retrieve the previous workspace coordinates
-        previous_workspace_coords = self._get_previous_workspace(*current_workspace_coords)
-        if previous_workspace_coords is None:
-            return
+    def go_next_workspace_with_views(self):
+        self._go_workspace("next", with_views=True)
 
-        # Set the previous workspace
-        workspace_x, workspace_y = previous_workspace_coords
-        self._socket.set_workspace(workspace_x, workspace_y)
+    def go_previous_workspace_with_views(self):
+        self._go_workspace("previous", with_views=True)
 
     def get_workspace_from_view(self, view_id):
         ws_with_views = self.get_workspaces_with_views()
@@ -391,7 +373,24 @@ class WayfireUtils:
                     return True
         return False
 
-    def get_workspaces_with_views(self):
+    def get_workspaces_with_views(self, current_x = None, current_y = None, direction = None):
+        """
+        Retrieves workspaces with views.
+
+        If `current_x`, `current_y`, and `direction` are provided, the function will return the next or previous
+        workspace with views relative to the given coordinates. If no arguments are provided, it returns all
+        workspaces with views.
+
+        Parameters:
+        - current_x (int, optional): The x-coordinate of the current workspace.
+        - current_y (int, optional): The y-coordinate of the current workspace.
+        - direction (str, optional): The direction to move ('next' or 'previous').
+
+        Returns:
+        - dict: The next or previous workspace with views based on the provided direction, or a list of all
+                workspaces with views if no direction is specified.
+        """
+
         focused_output = self._socket.get_focused_output()
         monitor = focused_output["geometry"]
         ws_with_views = []
@@ -420,7 +419,31 @@ class WayfireUtils:
                         if intersection_area > 0:  # If there's any intersection area
                             ws_with_views.append({"x": ws_x, "y": ws_y, "view-id": view["id"]})
 
-        return ws_with_views
+        if current_x is None or current_y is None or direction is None:
+            return ws_with_views
+
+        # Extract unique workspaces with views
+        unique_workspaces = { (ws['x'], ws['y']) for ws in ws_with_views }
+
+        # Ensure that unique_workspaces are sorted to maintain a consistent order
+        sorted_workspaces = sorted(unique_workspaces, key=lambda d: (d[1], d[0]))  # Sort by y, then x
+
+        # Find the index of the current workspace in the sorted list of workspaces with views
+        current_ws_index = next((i for i, (x, y) in enumerate(sorted_workspaces)
+                                if x == current_x and y == current_y), None)
+        if current_ws_index is None:
+            return None
+
+        # Calculate the index of the target workspace cyclically
+        if direction == 'next':
+            target_index = (current_ws_index + 1) % len(sorted_workspaces)
+        elif direction == 'previous':
+            target_index = (current_ws_index - 1) % len(sorted_workspaces)
+        else:
+            print("Invalid direction. Use 'next' or 'previous'.")
+            return None
+
+        return sorted_workspaces[target_index]
 
     def get_workspaces_without_views(self):
         workspace_with_views = self.get_workspaces_with_views()
@@ -652,7 +675,7 @@ class WayfireUtils:
                 workspace_num = row * cols + col + 1
                 if workspace_num <= total_workspaces:
                     workspaces[workspace_num] = [row, col]
-        return workspaces
+        return workspaces 
 
     def _calculate_intersection_area(self, view: dict, ws_x: int, ws_y: int, monitor: dict):
         # Calculate workspace rectangle
