@@ -19,18 +19,48 @@ class WayfireUtils:
 
         return cursor_x, cursor_y
 
-    def center_cursor_on_view(self, view_id):
-        view = self._socket.get_view(view_id)
-        output_id = view["output-id"]
-        view_geometry = view["geometry"]
-        output_geometry = self._socket.get_output(output_id)["geometry"]
-        cursor_x, cursor_y = self._find_view_middle_cursor_position(
-            view_geometry, output_geometry
-        )
+    def center_cursor_on_view(self, view_id: int) -> None:
+        """
+        Centers the cursor on the specified view by calculating the middle position
+        of the view on its associated output.
+
+        Args:
+            view_id (int): The ID of the view to center the cursor on.
+        """
+        output_id = self.get_view_output_id(view_id)
+        if output_id is None:
+            return
+
+        view_geometry = self.get_view_geometry(view_id)
+        if view_geometry is None:
+            return
+
+        output_geometry = self.get_output_geometry(output_id)
+        if output_geometry is None:
+            return
+
+        # Calculate the middle cursor position based on view and output geometries
+        cursor_x, cursor_y = self._find_view_middle_cursor_position(view_geometry, output_geometry)
+
+        # Move the cursor to the calculated position
         self._stipc.move_cursor(cursor_x, cursor_y)
 
-    def move_view_to_empty_workspace(self, view_id: int):
-        top_level_mapped_view = self._socket.get_view(view_id)["role"] == "toplevel"
+    def move_view_to_empty_workspace(self, view_id: int) -> None:
+        """
+        Moves a top-level view to an empty workspace.
+
+        This method performs the following steps:
+        - Verifies that the view with the given ID is a top-level view.
+        - Identifies an empty workspace that currently does not have any views.
+        - Moves the specified view to the identified empty workspace.
+
+        Args:
+            view_id (int): The ID of the view to be moved.
+
+        Raises:
+            AssertionError: If the view is not top-level or if no empty workspace is available.
+        """
+        top_level_mapped_view = self.get_view_role(view_id) == "toplevel"
         assert top_level_mapped_view, f"Unable to move view with ID {view_id}: view not found or not top-level."
 
         empty_workspace = self.get_workspaces_without_views()
@@ -58,7 +88,7 @@ class WayfireUtils:
     def get_focused_output_views(self):
         return [
             view for view in self._socket.list_views()
-            if view["output-id"] == self._socket.get_focused_output()["id"]
+            if view["output-id"] == self.get_focused_output_id()
         ]
 
     def list_pids(self):
@@ -89,7 +119,22 @@ class WayfireUtils:
             y = data["y"]
             return {"x": x, "y": y}
 
-    def go_workspace_set_focus(self, view_id: int):
+    def go_workspace_set_focus(self, view_id: int) -> None:
+        """
+        Moves the focus to the workspace containing the specified view and sets the focus to the view.
+
+        This method performs the following steps:
+        - Determines the workspace associated with the given view ID.
+        - Retrieves the currently active workspace.
+        - If the view's workspace is different from the active workspace, it switches to the view's workspace.
+        - Sets the focus to the specified view.
+
+        Args:
+            view_id (int): The ID of the view to which the focus should be set.
+
+        Notes:
+            The function assumes that the `view_id` is valid and that the workspace retrieval methods return appropriate values.
+        """
         workspace = self.get_workspace_from_view(view_id)
         active_workspace = self.get_active_workspace()
         if workspace and active_workspace:
@@ -97,14 +142,6 @@ class WayfireUtils:
             if active_workspace != workspace:
                 self._socket.set_workspace(workspace_x, workspace_y)
         self._socket.set_focus(view_id)
-
-    def get_focused_view_pid(self):
-        view = self._socket.get_focused_view()
-        if view is not None:
-            view_id = self._socket.get_focused_view()
-            if view_id is not None:
-                view_id = view_id["id"]
-                return self.get_view_pid(view_id)
 
     def has_ouput_fullscreen_view(self, output_id):
         # any fullscreen doesn't matter from what workspace
@@ -118,31 +155,6 @@ class WayfireUtils:
         ):
             return True
 
-    def get_focused_view_role(self):
-        focused_view_info = self._socket.get_focused_view()
-        if focused_view_info is not None:
-            return focused_view_info.get("role")
-
-    def get_focused_view_bbox(self):
-        focused_view = self._socket.get_focused_view()
-        if focused_view is not None:
-            return focused_view.get("bbox")
-
-    def get_focused_view_layer(self):
-        focused_view = self._socket.get_focused_view()
-        if focused_view is not None:
-            return focused_view.get("layer")
-
-    def get_focused_view_id(self):
-        focused_view = self._socket.get_focused_view()
-        if focused_view is not None:
-            return focused_view.get("id")
-
-    def get_focused_view_output(self):
-        focused_view = self._socket.get_focused_view()
-        if focused_view is not None:
-            return focused_view.get("output-id")
-
     def list_filtered_views(self):
         views = self._socket.list_views()
         filtered_views = [
@@ -153,63 +165,24 @@ class WayfireUtils:
         ]
         return filtered_views
 
-
-    def get_focused_view_title(self):
-        focused_view = self._socket.get_focused_view()
-        return (
-            focused_view["title"]
-            if focused_view and focused_view in self.list_filtered_views()
-            else None
-        )
-
-    def get_focused_view_type(self):
-        return self._socket.get_focused_view()["type"]
-
-    def get_focused_view_app_id(self):
-        return self._socket.get_focused_view()["app-id"]
-
     def get_active_workspace_number(self):
-        focused_output = self._socket.get_focused_output()
-        x = focused_output["workspace"]["x"]
-        y = focused_output["workspace"]["y"]
-        return self.get_workspace_number(x, y)
+        workspace = self.get_active_workspace_info()
+        if workspace:
+            return self.get_workspace_number(workspace["x"], workspace["y"])
 
     def get_workspace_number(self, workspace_x: int, workspace_y: int):
         workspaces_coordinates = self._total_workspaces()
         if not workspaces_coordinates:
-            return
-
-        coordinates_to_find = [
-            i for i in workspaces_coordinates.values() if [workspace_x, workspace_y] == i
-        ]
-        if not coordinates_to_find:
-            return
-
-        coordinates_to_find = coordinates_to_find[0]
-        total_workspaces = len(workspaces_coordinates)
-        rows = int(total_workspaces**0.5)
-        cols = (total_workspaces + rows - 1) // rows
-
-        row, col = coordinates_to_find
-        if 0 <= row < rows and 0 <= col < cols:
-            return row * cols + col + 1
+            return None
+        for workspace_number, coords in workspaces_coordinates.items():
+            if coords == [workspace_x, workspace_y]:
+                return workspace_number
+        return None
 
     def get_active_workspace_info(self):
         focused_output = self._socket.get_focused_output()
         if focused_output is not None:
             return focused_output.get("workspace")
-        return None
-
-    def get_focused_output_name(self):
-        focused_output = self._socket.get_focused_output()
-        if focused_output is not None:
-            return focused_output.get("name")
-        return None
-
-    def get_focused_output_id(self):
-        focused_output = self._socket.get_focused_output()
-        if focused_output is not None:
-            return focused_output.get("id")
         return None
 
     def get_output_id_by_name(self, output_name: str):
@@ -222,23 +195,183 @@ class WayfireUtils:
             if output["id"] == output_id:
                 return output["name"]
 
-    def get_focused_output_geometry(self):
+    def get_output(self, output_id: int, key: str):
+        output = self._socket.get_output(output_id)
+        if output is not None:
+            return output.get(key)
+        return None
+
+    def get_output_id(self, output_id: int):
+        return self.get_output(output_id, "id")
+
+    def get_output_name(self, output_id: int):
+        return self.get_output(output_id, "name")
+
+    def get_output_geometry(self, output_id: int):
+        return self.get_output(output_id, "geometry")
+
+    def get_output_workarea(self, output_id: int):
+        return self.get_output(output_id, "workarea")
+
+    def get_output_workspace(self, output_id: int):
+        return self.get_output(output_id, "workspace")
+
+    def get_output_wset_index(self, output_id: int):
+        return self.get_output(output_id, "wset-index")
+
+    def get_focused_output(self, key: str):
         focused_output = self._socket.get_focused_output()
         if focused_output is not None:
-            return focused_output.get("geometry")
+            return focused_output.get(key)
         return None
+
+    def get_focused_output_id(self):
+        return self.get_focused_output("id")
+
+    def get_focused_output_name(self):
+        return self.get_focused_output("name")
+
+    def get_focused_output_geometry(self):
+        return self.get_focused_output("geometry")
 
     def get_focused_output_workarea(self):
-        focused_output = self._socket.get_focused_output()
-        if focused_output is not None:
-            return focused_output.get("workarea")
+        return self.get_focused_output("workarea")
+
+    def get_focused_output_workspace(self):
+        return self.get_focused_output("workspace")
+
+    def get_focused_output_wset_index(self):
+        return self.get_focused_output("wset-index")
+
+    def get_focused_view(self, key: str):
+        focused_view = self._socket.get_focused_view()
+        if focused_view is not None:
+            return focused_view.get(key)
         return None
 
-    def get_view_pid(self, view_id: int):
+    def get_focused_view_id(self):
+        return self.get_focused_view("id")
+
+    def get_focused_view_title(self):
+        return self.get_focused_view("title")
+
+    def get_focused_view_geometry(self):
+        return self.get_focused_view("geometry")
+
+    def get_focused_view_base_geometry(self):
+        return self.get_focused_view("base-geometry")
+
+    def get_focused_view_bbox(self):
+        return self.get_focused_view("bbox")
+
+    def get_focused_view_max_size(self):
+        return self.get_focused_view("max-size")
+
+    def get_focused_view_min_size(self):
+        return self.get_focused_view("min-size")
+
+    def get_focused_view_layer(self):
+        return self.get_focused_view("layer")
+
+    def get_focused_view_output_id(self):
+        return self.get_focused_view("output-id")
+
+    def get_focused_view_output_name(self):
+        return self.get_focused_view("output-name")
+
+    def get_focused_view_pid(self):
+        return self.get_focused_view("pid")
+
+    def get_focused_view_role(self):
+        return self.get_focused_view("role")
+
+    def get_focused_view_sticky(self):
+        return self.get_focused_view("sticky")
+
+    def get_focused_view_tiled_edges(self):
+        return self.get_focused_view("tiled-edges")
+
+    def get_focused_view_wset_index(self):
+        return self.get_focused_view("wset-index")
+
+    def get_view(self, view_id: int, key: str):
         view = self._socket.get_view(view_id)
+
         if view is not None:
-            pid = view["pid"]
-            return pid
+            return view.get(key, None)
+        return None
+
+    def get_view_activated(self, view_id: int):
+        return self.get_view(view_id, "activated")
+
+    def get_view_app_id(self, view_id: int):
+        return self.get_view(view_id, "app-id")
+
+    def get_view_base_geometry(self, view_id: int):
+        return self.get_view(view_id, "base-geometry")
+
+    def get_view_bbox(self, view_id: int):
+        return self.get_view(view_id, "bbox")
+
+    def get_view_focusable(self, view_id: int):
+        return self.get_view(view_id, "focusable")
+
+    def get_view_fullscreen(self, view_id: int):
+        return self.get_view(view_id, "fullscreen")
+
+    def get_view_geometry(self, view_id: int):
+        return self.get_view(view_id, "geometry")
+
+    def get_view_id(self, view_id: int):
+        return self.get_view(view_id, "id")
+
+    def get_view_last_focus_timestamp(self, view_id: int):
+        return self.get_view(view_id, "last-focus-timestamp")
+
+    def get_view_layer(self, view_id: int):
+        return self.get_view(view_id, "layer")
+
+    def get_view_mapped(self, view_id: int):
+        return self.get_view(view_id, "mapped")
+
+    def get_view_max_size(self, view_id: int):
+        return self.get_view(view_id, "max-size")
+
+    def get_view_min_size(self, view_id: int):
+        return self.get_view(view_id, "min-size")
+
+    def get_view_minimized(self, view_id: int):
+        return self.get_view(view_id, "minimized")
+
+    def get_view_output_id(self, view_id: int):
+        return self.get_view(view_id, "output-id")
+
+    def get_view_output_name(self, view_id: int):
+        return self.get_view(view_id, "output-name")
+
+    def get_view_parent(self, view_id: int):
+        return self.get_view(view_id, "parent")
+
+    def get_view_pid(self, view_id: int):
+        return self.get_view(view_id, "pid")
+
+    def get_view_role(self, view_id: int):
+        return self.get_view(view_id, "role")
+
+    def get_view_sticky(self, view_id: int):
+        return self.get_view(view_id, "sticky")
+
+    def get_view_tiled_edges(self, view_id: int):
+        return self.get_view(view_id, "tiled-edges")
+
+    def get_view_title(self, view_id: int):
+        return self.get_view(view_id, "title")
+
+    def get_view_type(self, view_id: int):
+        return self.get_view(view_id, "type")
+
+    def get_view_wset_index(self, view_id: int):
+        return self.get_view(view_id, "wset-index")
 
     def _get_adjacent_workspace(self, workspace_x: int, workspace_y: int, direction: str) -> Optional[Tuple[int, int]]:
         """
@@ -317,32 +450,33 @@ class WayfireUtils:
         :param direction: 'previous' to go to the previous workspace, 'next' to go to the next workspace.
         :param with_views: If True, go to the next workspace with views instead of any workspace.
         """
-        focused_output = self._socket.get_focused_output()
-        current_x = focused_output['workspace']['x']
-        current_y = focused_output['workspace']['y']
+        workspace = self.get_focused_output_workspace()
+        if workspace:
+            current_x = workspace['x']
+            current_y = workspace['y']
 
-        if with_views:
-            if direction == 'next':
-                target_workspace_coords = self._get_next_workspace_with_views(current_x, current_y)
-            elif direction == 'previous':
-                target_workspace_coords = self._get_previous_workspace_with_views(current_x, current_y)
+            if with_views:
+                if direction == 'next':
+                    target_workspace_coords = self._get_next_workspace_with_views(current_x, current_y)
+                elif direction == 'previous':
+                    target_workspace_coords = self._get_previous_workspace_with_views(current_x, current_y)
+                else:
+                    print("Invalid direction for workspaces with views. Use 'next' or 'previous'.")
+                    return
             else:
-                print("Invalid direction for workspaces with views. Use 'next' or 'previous'.")
-                return
-        else:
-            if direction == 'previous':
-                target_workspace_coords = self._get_previous_workspace(current_x, current_y)
-            elif direction == 'next':
-                target_workspace_coords = self._get_next_workspace(current_x, current_y)
-            else:
-                print("Invalid direction. Use 'previous' or 'next'.")
-                return
+                if direction == 'previous':
+                    target_workspace_coords = self._get_previous_workspace(current_x, current_y)
+                elif direction == 'next':
+                    target_workspace_coords = self._get_next_workspace(current_x, current_y)
+                else:
+                    print("Invalid direction. Use 'previous' or 'next'.")
+                    return
  
-        if target_workspace_coords is None:
-            return
+            if target_workspace_coords is None:
+                return
 
-        workspace_x, workspace_y = target_workspace_coords
-        self._socket.set_workspace(workspace_x, workspace_y)
+            workspace_x, workspace_y = target_workspace_coords
+            self._socket.set_workspace(workspace_x, workspace_y)
 
     def go_previous_workspace(self):
         self._go_workspace("previous")
@@ -391,16 +525,16 @@ class WayfireUtils:
                 workspaces with views if no direction is specified.
         """
 
-        focused_output = self._socket.get_focused_output()
-        monitor = focused_output["geometry"]
+        monitor = self.get_focused_output_geometry()
+        workspace = self.get_focused_output_workspace()
         ws_with_views = []
         views = self.get_focused_output_views()
 
-        if views:
-            grid_width = focused_output["workspace"]["grid_width"]
-            grid_height = focused_output["workspace"]["grid_height"]
-            current_ws_x = focused_output["workspace"]["x"]
-            current_ws_y = focused_output["workspace"]["y"]
+        if views and workspace and monitor:
+            grid_width = workspace["grid_width"]
+            grid_height = workspace["grid_height"]
+            current_ws_x = workspace["x"]
+            current_ws_y = workspace["y"]
 
             for ws_x in range(grid_width):
                 for ws_y in range(grid_height):
@@ -469,90 +603,6 @@ class WayfireUtils:
             if view["x"] == active_workspace["x"] and view["y"] == active_workspace["y"]
         ]
  
-    def get_view_output_id(self, view_id: int):
-        view = self._socket.get_view(view_id)
-        if view is not None:
-            return view.get("output-id")
-        return None
-
-    def get_view_output_name(self, view_id: int):
-        view = self._socket.get_view(view_id)
-        if view is not None:
-            return view.get("output-name")
-        return None
-
-    def is_view_fullscreen(self, view_id: int):
-        view = self._socket.get_view(view_id)
-        if view is not None:
-            return view.get("fullscreen")
-        return None
-
-    def is_view_focusable(self, view_id: int):
-        view = self._socket.get_view(view_id)
-        if view is not None:
-            return view.get("focusable")
-        return None
-
-    def get_view_geometry(self, view_id: int):
-        view = self._socket.get_view(view_id)
-        if view is not None:
-            return view.get("geometry")
-        return None
-
-    def is_view_minimized(self, view_id: int):
-        view = self._socket.get_view(view_id)
-        if view is not None:
-            return view.get("minimized")
-        return None
-
-    def is_view_maximized(self, view_id: int):
-        tiled_edges = self.get_view_tiled_edges(view_id)
-        if tiled_edges is not None:
-            return tiled_edges == 15
-        return False
-
-    def get_view_tiled_edges(self, view_id: int):
-        view = self._socket.get_view(view_id)
-        if view is not None:
-            return view.get("tiled-edges")
-        return None
-
-    def get_view_title(self, view_id: int):
-        view = self._socket.get_view(view_id)
-        if view is not None:
-            return view.get("title")
-        return None
-
-    def get_view_type(self, view_id: int):
-        view = self._socket.get_view(view_id)
-        if view is not None:
-            return view.get("type")
-        return None
-
-    def get_view_app_id(self, view_id: int):
-        view = self._socket.get_view(view_id)
-        if view is not None:
-            return view.get("app-id")
-        return None
-
-    def get_view_role(self, view_id: int):
-        view_info = self._socket.get_view(view_id)
-        if view_info is not None:
-            return view_info.get("role")
-        return None
-
-    def get_view_bbox(self, view_id: int):
-        view_info = self._socket.get_view(view_id)
-        if view_info is not None:
-            return view_info.get("bbox")
-        return None
-
-    def get_view_layer(self, view_id: int):
-        view_layer_content = self.get_view_layer(view_id)
-        if view_layer_content:
-            return view_layer_content.get("layer")
-        return None
-
     def find_views(self, value: Any, key: Optional[str] = None) -> Optional[List[dict]]:
         """
         Find and return a list of views from the Wayfire compositor that match a specified value.
@@ -630,22 +680,17 @@ class WayfireUtils:
         winfo = self.get_active_workspace_info()
         if not winfo:
             return {}
+
         total_workspaces = winfo["grid_height"] * winfo["grid_width"]
-
-        # Calculate the number of rows and columns based on the total number of workspaces
-        rows = int(total_workspaces**0.5)
-        cols = (total_workspaces + rows - 1) // rows
-
-        # Initialize the dictionary to store workspace numbers and their coordinates
         workspaces = {}
 
         # Loop through each row and column to assign workspace numbers and coordinates
-        for row in range(rows):
-            for col in range(cols):
-                workspace_num = row * cols + col + 1
+        for row in range(winfo["grid_height"]):
+            for col in range(winfo["grid_width"]):
+                workspace_num = row * winfo["grid_width"] + col + 1
                 if workspace_num <= total_workspaces:
-                    workspaces[workspace_num] = [row, col]
-        return workspaces 
+                    workspaces[workspace_num] = [col, row]
+        return workspaces
 
     def _calculate_intersection_area(self, view: dict, ws_x: int, ws_y: int, monitor: dict):
         # Calculate workspace rectangle
@@ -714,20 +759,18 @@ class WayfireUtils:
         """
         output_id = self.get_output_id_by_name(output_name)
         if output_id:
-            wset = self._socket.get_output(output_id)["wset-index"]
-            if view_id:
+            wset = self.get_output_wset_index(output_id)
+            if view_id and wset:
                 self._socket.send_view_to_wset(view_id, wset)
 
     def get_current_tiling_layout(self):
-        output = self._socket.get_focused_output()
-        wset = output["wset-index"]
-        x = output["workspace"]["x"]
-        y = output["workspace"]["y"]
-        return self._socket.get_tiling_layout(wset, x, y)
+        wset = self.get_focused_view_wset_index()
+        ws = self.get_focused_output_workspace()
+        if wset and ws:
+            return self._socket.get_tiling_layout(wset, ws["x"], ws["y"])
 
     def set_current_tiling_layout(self, layout):
-        output = self._socket.get_focused_output()
-        wset = output["wset-index"]
-        x = output["workspace"]["x"]
-        y = output["workspace"]["y"]
-        return self._socket.set_tiling_layout(wset, x, y, layout)
+        wset = self.get_focused_view_wset_index()
+        ws = self.get_focused_output_workspace()
+        if wset and ws:
+            return self._socket.set_tiling_layout(wset, ws["x"], ws["y"], layout)
