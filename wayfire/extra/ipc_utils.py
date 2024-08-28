@@ -9,6 +9,24 @@ class WayfireUtils:
         self._stipc = Stipc(socket)
 
     def _find_view_middle_cursor_position(self, view_geometry: dict, monitor_geometry: dict):
+        """
+        Calculate the cursor position at the middle of a view.
+
+        This method computes the position of the cursor at the center of a view, 
+        taking into account the view's geometry and the monitor's geometry. It returns 
+        the coordinates of the cursor relative to the monitor's top-left corner.
+
+        Args:
+            view_geometry (dict): A dictionary representing the view with keys 
+                                  "x", "y", "width", and "height" for its position 
+                                  and dimensions.
+            monitor_geometry (dict): A dictionary representing the monitor with keys 
+                                     "x" and "y" for its position and dimensions.
+
+        Returns:
+            tuple: A tuple (cursor_x, cursor_y) representing the cursor position at 
+                   the middle of the view, relative to the monitor's top-left corner.
+        """
         # Calculate the middle position of the view
         view_middle_x = view_geometry["x"] + view_geometry["width"] // 2
         view_middle_y = view_geometry["y"] + view_geometry["height"] // 2
@@ -150,6 +168,18 @@ class WayfireUtils:
         return plugin_name in plugins
 
     def _sum_geometry_resolution(self):
+        """
+        Calculate the total width and height of all connected outputs.
+
+        This method retrieves the list of connected monitors (outputs),
+        sums their geometrical widths and heights, and returns the total width and 
+        height as a tuple.
+
+        Returns:
+            tuple: A tuple containing two integers:
+                - total_width (int): The sum of the widths of all connected outputs.
+                - total_height (int): The sum of the heights of all connected outputs.
+        """
         outputs = self._socket.list_outputs()
         total_width = 0
         total_height = 0
@@ -159,6 +189,19 @@ class WayfireUtils:
         return total_width, total_height
 
     def get_active_workspace(self):
+        """
+        Retrieve the coordinates of the active workspace.
+
+        This method calls `get_active_workspace_info()` to obtain information 
+        about the currently active workspace. If the workspace information is 
+        available, it extracts the `x` and `y` coordinates and returns them as 
+        a dictionary.
+
+        Returns:
+            dict: A dictionary with two keys:
+                - "x" (int): The column index of the active workspace.
+                - "y" (int): The row index of the active workspace.
+        """
         data = self.get_active_workspace_info()
         if data:
             x = data["x"]
@@ -190,7 +233,21 @@ class WayfireUtils:
         self._socket.set_focus(view_id)
 
     def has_ouput_fullscreen_view(self, output_id):
-        # any fullscreen doesn't matter from what workspace
+        """
+        Check if there is any fullscreen view on the specified output.
+
+        This method retrieves the list of views and checks
+        if any view is currently fullscreen on the specified output. It does not
+        consider the workspace of the view; it only checks the fullscreen status
+        and output ID.
+
+        Args:
+            output_id (str): The ID of the output to check for fullscreen views.
+
+        Returns:
+            bool: True if there is at least one fullscreen view on the specified 
+                  output, otherwise False.
+        """
         list_views = self._socket.list_views()
         if not list_views:
             return
@@ -202,6 +259,19 @@ class WayfireUtils:
             return True
 
     def list_filtered_views(self):
+        """
+        List all filtered views based on specific criteria.
+
+        This method retrieves all views and filters them based on the following criteria:
+        - The view's role must be "toplevel".
+        - The view's application ID must not be "nil".
+        - The view's process ID (PID) must not be -1.
+
+        Returns:
+            list: A list of dictionaries, where each dictionary represents a view 
+                  that meets the criteria. Each view contains details such as role, 
+                  application ID, and PID.
+        """
         views = self._socket.list_views()
         filtered_views = [
             view for view in views
@@ -212,11 +282,37 @@ class WayfireUtils:
         return filtered_views
 
     def get_active_workspace_number(self):
+        """
+        Retrieve the number of the currently active workspace.
+
+        This method gets the current workspace information, including its `x` and `y` 
+        coordinates, and uses these coordinates to determine the workspace number 
+        by calling `get_workspace_number`.
+
+        Returns:
+            int: The number of the currently active workspace. Returns None if 
+                  workspace information is not available.
+        """
         workspace = self.get_active_workspace_info()
         if workspace:
             return self.get_workspace_number(workspace["x"], workspace["y"])
 
     def get_workspace_number(self, workspace_x: int, workspace_y: int):
+        """
+        Retrieve the workspace number corresponding to the given coordinates.
+
+        This method compares the provided `workspace_x` and `workspace_y` coordinates 
+        with a list of all available workspace coordinates. It returns the workspace 
+        number if a match is found.
+
+        Args:
+            workspace_x (int): The x-coordinate of the workspace.
+            workspace_y (int): The y-coordinate of the workspace.
+
+        Returns:
+            int: The number of the workspace that matches the given coordinates. 
+                  Returns None if no matching workspace is found.
+        """
         workspaces_coordinates = self._total_workspaces()
         if not workspaces_coordinates:
             return None
@@ -226,17 +322,58 @@ class WayfireUtils:
         return None
 
     def get_active_workspace_info(self):
+        """
+        Retrieve information about the currently active workspace.
+
+        This method obtains the focused output from the Wayfire socket and returns 
+        the workspace information associated with it. If no focused output is found, 
+        it returns None.
+
+        Returns:
+            dict or None: A dictionary containing information about the active workspace, 
+                          if available. The dictionary typically includes workspace 
+                          coordinates or other relevant details. Returns None if no 
+                          focused output is found.
+        """
         focused_output = self._socket.get_focused_output()
         if focused_output is not None:
             return focused_output.get("workspace")
         return None
 
     def get_output_id_by_name(self, output_name: str):
+        """
+        Retrieve the ID of an output by its name.
+
+        This method iterates through the list of outputs and returns the ID of the 
+        output that matches the given `output_name`. If no matching output is found, 
+        it returns None.
+
+        Args:
+            output_name (str): The name of the output to find.
+
+        Returns:
+            str or None: The ID of the output with the specified name, or None if no 
+                         matching output is found.
+        """
         for output in self._socket.list_outputs():
             if output["name"] == output_name:
                 return output["id"]
 
     def get_output_name_by_id(self, output_id: int):
+        """
+        Retrieve the name of an output by its ID.
+
+        This method iterates through the list of outputs and returns the name of the 
+        output that matches the given `output_id`. If no matching output is found, 
+        it returns None.
+
+        Args:
+            output_id (int): The ID of the output to find.
+
+        Returns:
+            str or None: The name of the output with the specified ID, or None if no 
+                         matching output is found.
+        """
         for output in self._socket.list_outputs():
             if output["id"] == output_id:
                 return output["name"]
@@ -537,6 +674,21 @@ class WayfireUtils:
         self._go_workspace("previous", with_views=True)
 
     def get_workspace_from_view(self, view_id):
+        """
+        Retrieve the workspace coordinates associated with a specific view.
+
+        This method checks a list of workspaces that have views and returns the coordinates 
+        (x and y) of the workspace that contains the view with the given `view_id`. If no 
+        matching workspace is found, it returns None.
+
+        Args:
+            view_id: The ID of the view whose workspace coordinates are to be retrieved.
+
+        Returns:
+            dict or None: A dictionary with keys "x" and "y" representing the coordinates 
+                          of the workspace containing the view. Returns None if no matching 
+                          workspace is found.
+        """
         ws_with_views = self.get_workspaces_with_views()
         if ws_with_views:
             for ws in ws_with_views:
@@ -544,6 +696,21 @@ class WayfireUtils:
                     return {"x": ws["x"], "y": ws["y"]}
 
     def has_workspace_views(self, workspace_x, workspace_y):
+        """
+        Check if a workspace has any views.
+
+        This method checks if there are any views associated with a workspace specified 
+        by `workspace_x` and `workspace_y` coordinates. It iterates through a list of 
+        workspaces with views, and if it finds a match, it returns True. If no matching 
+        workspace is found, it returns False.
+
+        Args:
+            workspace_x (int): The x-coordinate of the workspace to check.
+            workspace_y (int): The y-coordinate of the workspace to check.
+
+        Returns:
+            bool: True if the specified workspace has views, otherwise False.
+        """
         ws_with_views_list = self.get_workspaces_with_views()
         if ws_with_views_list:
             for workspace_with_views in ws_with_views_list:
@@ -626,6 +793,19 @@ class WayfireUtils:
         return sorted_workspaces[target_index]
 
     def get_workspaces_without_views(self):
+        """
+        Retrieve a list of workspaces that do not have any views.
+
+        This method compares the list of workspaces with views to the total list of 
+        workspaces and returns a list of workspaces that do not have any associated 
+        views. The result is a list of workspace coordinates that are not present in 
+        the list of workspaces with views.
+
+        Returns:
+            list: A list of workspace coordinates (each as a list of [x, y]) for workspaces 
+                  that do not have any views. Returns an empty list if all workspaces have 
+                  views or if no workspaces are available.
+        """
         workspace_with_views = self.get_workspaces_with_views()
         if not workspace_with_views:
             return
@@ -637,6 +817,19 @@ class WayfireUtils:
         return list(filterfalse(lambda x: x in workspace_with_views, all_workspaces))
 
     def get_views_from_active_workspace(self):
+        """
+        Retrieve the IDs of views associated with the currently active workspace.
+
+        This method first obtains the information about the active workspace and the list 
+        of workspaces with views. It then returns a list of view IDs that belong to the 
+        active workspace. If there are no workspaces with views or the active workspace 
+        information is not available, it returns an empty list.
+
+        Returns:
+            list: A list of view IDs for views that are in the active workspace. Returns 
+                  an empty list if no views are found or if the active workspace information 
+                  is not available.
+        """
         active_workspace = self.get_active_workspace_info()
         workspace_with_views = self.get_workspaces_with_views()
  
@@ -697,6 +890,23 @@ class WayfireUtils:
         return views if views else None
 
     def find_device_id(self, name_or_id_or_type: str):
+        """
+        Find the ID of an input device based on its name, ID, or type.
+
+        This method searches through the list of input devices to find one that matches 
+        the provided `name_or_id_or_type`. It checks the device's name, ID, and type 
+        against the given value. If a matching device is found, it returns the device's ID. 
+        If no matching device is found, it raises an AssertionError.
+
+        Args:
+            name_or_id_or_type (str): The name, ID, or type of the device to find.
+
+        Returns:
+            str: The ID of the device that matches the given name, ID, or type.
+
+        Raises:
+            AssertionError: If no device with the given name, ID, or type is found.
+        """
         devices = self._socket.list_input_devices()
         for dev in devices:
             if (
@@ -708,12 +918,45 @@ class WayfireUtils:
         assert False, f"Device with name, ID, or type '{name_or_id_or_type}' not found."
 
     def disable_input_device(self, args):
+        """
+        Disable an input device based on provided arguments.
+
+        This method uses the provided arguments to find the corresponding device ID 
+        and then disables the input device by calling the appropriate configuration 
+        method. If the device is not found, it raises an AssertionError.
+
+        Args:
+            args (str): The name, ID, or type of the device to be disabled.
+
+        Returns:
+            The result of the device configuration operation.
+
+        Raises:
+            AssertionError: If the device cannot be found using the provided arguments.
+        """
+
         device_id = self.find_device_id(args)
         assert device_id is not None, f"Device with arguments {args} not found."
         msg = self._socket.configure_input_device(device_id, False)
         return msg
 
     def enable_input_device(self, args):
+        """
+        Enable an input device based on provided arguments.
+
+        This method uses the provided arguments to find the corresponding device ID 
+        and then enables the input device by calling the appropriate configuration 
+        method. If the device is not found, it raises an AssertionError.
+
+        Args:
+            args (str): The name, ID, or type of the device to be enabled.
+
+        Returns:
+            The result of the device configuration operation.
+
+        Raises:
+            AssertionError: If the device cannot be found using the provided arguments.
+        """
         device_id = self.find_device_id(args)
         assert device_id is not None, f"Device with arguments {args} not found."
         msg = self._socket.configure_input_device(device_id, True)
@@ -723,6 +966,19 @@ class WayfireUtils:
         self._socket.assign_slot(view_id, "slot_c")
 
     def _total_workspaces(self):
+        """
+        Get a dictionary of all workspaces with their coordinates.
+
+        This method calculates the total number of workspaces based on the active 
+        workspace's grid dimensions (height and width). It then creates a dictionary 
+        where each key is a workspace number and each value is a list of coordinates 
+        [column, row] corresponding to that workspace.
+
+        Returns:
+            dict: A dictionary mapping workspace numbers to their coordinates 
+                  [column, row]. The keys are workspace numbers, and the values 
+                  are lists containing the column and row indices of the workspaces.
+        """
         winfo = self.get_active_workspace_info()
         if not winfo:
             return {}
@@ -739,6 +995,25 @@ class WayfireUtils:
         return workspaces
 
     def _calculate_intersection_area(self, view: dict, ws_x: int, ws_y: int, monitor: dict):
+        """
+        Calculate the intersection area between a view and a workspace.
+
+        This method computes the area of intersection between a given view and a 
+        workspace based on their respective rectangles. It calculates the intersection 
+        by determining the overlapping coordinates and then computes the area.
+
+        Args:
+            view (dict): A dictionary representing the view with keys "x", "y", 
+                         "width", and "height" for its position and dimensions.
+            ws_x (int): The x-coordinate of the workspace in grid units.
+            ws_y (int): The y-coordinate of the workspace in grid units.
+            monitor (dict): A dictionary representing the monitor with keys "width" 
+                            and "height" for its dimensions.
+
+        Returns:
+            int: The area of the intersection between the view and the workspace. 
+                 Returns 0 if there is no overlap.
+        """
         # Calculate workspace rectangle
         workspace_start_x = ws_x * monitor["width"]
         workspace_start_y = ws_y * monitor["height"]
@@ -810,12 +1085,40 @@ class WayfireUtils:
                 self._socket.send_view_to_wset(view_id, wset)
 
     def get_current_tiling_layout(self):
+        """
+        Retrieve the current tiling layout of the focused workspace.
+
+        This method obtains the index of the focused workspace set and the coordinates 
+        of the focused workspace. It then queries the Wayfire socket for the tiling 
+        layout of the workspace.
+
+        Returns:
+            The current tiling layout of the focused workspace. The format of the 
+            returned layout depends on the Wayfire socket's implementation. If the 
+            workspace set index or workspace coordinates are not available, it returns None.
+        """
         wset = self.get_focused_view_wset_index()
         ws = self.get_focused_output_workspace()
         if wset and ws:
             return self._socket.get_tiling_layout(wset, ws["x"], ws["y"])
 
     def set_current_tiling_layout(self, layout):
+        """
+        Set the tiling layout for the currently focused workspace.
+
+        This method updates the tiling layout of the focused workspace based on 
+        the provided `layout`. It retrieves the index of the focused workspace set 
+        and the coordinates of the focused workspace, and then applies the new 
+        layout via the Wayfire socket.
+
+        Args:
+            layout: The new tiling layout to be applied. The format of `layout` 
+                    depends on the Wayfire socket's implementation.
+
+        Returns:
+            The result of the layout configuration operation. The exact return value 
+            depends on the Wayfire socket's implementation.
+        """
         wset = self.get_focused_view_wset_index()
         ws = self.get_focused_output_workspace()
         if wset and ws:
