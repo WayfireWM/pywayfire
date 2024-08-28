@@ -31,6 +31,16 @@ class Stipc:
         return self.socket.send_json(message)
 
     def move_cursor(self, x: int, y: int):
+        """
+        Move the cursor to a specified position.
+
+        This method sets the cursor's position to the given coordinates (x, y).
+
+        Args:
+            x (int): The x-coordinate to move the cursor to.
+            y (int): The y-coordinate to move the cursor to.
+
+        """
         message = get_msg_template("stipc/move_cursor")
         message["data"]["x"] = x
         message["data"]["y"] = y
@@ -115,9 +125,22 @@ class Stipc:
 
     def click_button(self, btn_with_mod: str, mode: str):
         """
-        btn_with_mod can be S-BTN_LEFT/BTN_RIGHT/etc. or just BTN_LEFT/...
-        If S-BTN..., then the super modifier will be pressed as well.
-        mode is full, press or release
+        Simulate a button click with optional modifier keys.
+
+        The button can be specified with or without a super modifier, and the click 
+        action can be configured as a full click, press, or release.
+
+        Args:
+            btn_with_mod (str): The button to be clicked, optionally including a 
+                                modifier key (e.g., "S-BTN_LEFT" for super + left 
+                                button, or "BTN_RIGHT" for just the right button).
+            mode (str): The mode of the button action, which can be "full" for a 
+                        complete click, "press" for pressing the button, or "release" 
+                        for releasing the button.
+
+        Example:
+            click_button("S-BTN_LEFT", "full")
+            # Simulates a full click with the super modifier + left button.
         """
         message = get_msg_template("stipc/feed_button")
         message["method"] = "stipc/feed_button"
@@ -142,6 +165,28 @@ class Stipc:
         return self.socket.send_json(message)
 
     def press_key(self, keys: str, timeout=0):
+        """
+        Simulate pressing a combination of keys with optional modifiers.
+
+        This method simulates the pressing of a key or key combination, including 
+        any specified modifier keys (Alt, Shift, Ctrl, Meta). It handles key 
+        press and release actions, and optionally waits between actions based on 
+        the provided timeout.
+
+        Args:
+            keys (str): A string representing the keys to be pressed, with modifiers 
+                        separated by hyphens (e.g., "A-S-C-W" for Alt+Shift+Ctrl+Meta+W).
+            timeout (int, optional): The time in milliseconds to wait between key 
+                                     press and release actions. Defaults to 0.
+
+        Example:
+            press_key("A-KEY_TAB") <- simulates pressing Alt + Tab
+            press_key("C-KEY_C")  <- Simulates pressing Ctrl + C
+            press_key("A-S-KEY_TAB", 500)  <- Simulates pressing Alt + Shift + Tab with a 500ms delay
+
+        Returns:
+            None: This method performs actions without returning a value.
+        """
         modifiers = {
             "A": "KEY_LEFTALT",
             "S": "KEY_LEFTSHIFT",
@@ -172,6 +217,29 @@ class Stipc:
     def click_and_drag(
         self, button, start_x, start_y, end_x, end_y, release=True, steps=10
     ):
+        """
+        Simulate a click-and-drag action of the mouse cursor.
+
+        This method moves the cursor to a starting position, simulates pressing a mouse 
+        button, drags the cursor to an ending position in specified steps, and optionally 
+        releases the mouse button.
+
+        Args:
+            button (str): The mouse button to be used for the click-and-drag action (e.g., "BTN_LEFT").
+            start_x (int): The x-coordinate of the starting position.
+            start_y (int): The y-coordinate of the starting position.
+            end_x (int): The x-coordinate of the ending position.
+            end_y (int): The y-coordinate of the ending position.
+            release (bool, optional): Whether to release the mouse button after dragging. Defaults to True.
+            steps (int, optional): The number of steps to divide the drag motion into. Defaults to 10.
+
+        Example:
+            click_and_drag("BTN_LEFT", 100, 200, 300, 400, release=True, steps=20)
+            # Simulates a left mouse button click-and-drag from (100, 200) to (300, 400) with 20 steps.
+
+        Returns:
+            None: This method performs actions without returning a value.
+        """
         dx = end_x - start_x
         dy = end_y - start_y
 
