@@ -87,22 +87,6 @@ class WayfireUtils:
         empty_workspace = empty_workspace[0]
         self._socket.set_workspace(empty_workspace[0], empty_workspace[1], view_id)
 
-    def get_tile_list_views(self, layout):
-        if "view-id" in layout:
-            return [
-                (
-                    layout["view-id"],
-                    layout["geometry"]["width"],
-                    layout["geometry"]["height"],
-                )
-            ]
-
-        split = "horizontal-split" if "horizontal-split" in layout else "vertical-split"
-        list = []
-        for child in layout[split]:
-            list += self.get_tile_list_views(child)
-        return list
-
     def get_focused_output_views(self):
         return [
             view for view in self._socket.list_views()
@@ -1083,6 +1067,40 @@ class WayfireUtils:
             wset = self.get_output_wset_index(output_id)
             if view_id and wset:
                 self._socket.send_view_to_wset(view_id, wset)
+
+    def get_tile_list_views(self, layout):
+        """
+        Retrieve a list of views and their dimensions from a tiling layout.
+
+        This method extracts information about views from the given tiling layout. 
+        If the layout contains a single view, it returns a list with that view's ID 
+        and dimensions. If the layout contains split sections, it recursively gathers 
+        information from child layouts.
+
+        Args:
+            layout (dict): A dictionary representing the tiling layout. It may contain 
+                           view details or split sections ("horizontal-split" or 
+                           "vertical-split") with further child layouts.
+
+        Returns:
+            list: A list of tuples, each containing a view ID and its dimensions 
+                  (width, height). If the layout contains split sections, the method 
+                  recursively processes and combines views from all child layouts.
+        """
+        if "view-id" in layout:
+            return [
+                (
+                    layout["view-id"],
+                    layout["geometry"]["width"],
+                    layout["geometry"]["height"],
+                )
+            ]
+
+        split = "horizontal-split" if "horizontal-split" in layout else "vertical-split"
+        list = []
+        for child in layout[split]:
+            list += self.get_tile_list_views(child)
+        return list
 
     def get_current_tiling_layout(self):
         """
