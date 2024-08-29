@@ -7,8 +7,12 @@ from wayfire.core.template import get_msg_template, geometry_to_json
 
 class WayfireSocket:
     def __init__(self, socket_name: str | None=None, allow_manual_search=False):
-        if socket_name is None:
-            socket_name = os.getenv("WAYFIRE_SOCKET")
+        self.wayfire_ipc_ip = os.getenv('WAYFIRE_IPC_IP')
+        self.wayfire_ipc_port = os.getenv('WAYFIRE_IPC_PORT')
+        if self.wayfire_ipc_ip is None:
+            self.wayfire_ipc_ip = "127.0.0.1"
+        if self.wayfire_ipc_port is None:
+            self.wayfire_ipc_port = "7777"
 
         self.socket_name = None
         self.pending_events = []
@@ -31,16 +35,17 @@ class WayfireSocket:
                 except Exception:
                     pass
 
-        elif socket_name is not None:
-            self.connect_client(socket_name)
-            self.socket_name = socket_name
+        self.connect_client()
 
-        if self.socket_name is None:
-            raise Exception("Failed to find a suitable Wayfire socket!")
+    def connect_client(self):
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print(f"Connecting to {self.wayfire_ipc_ip}:{self.wayfire_ipc_port}")
+        try:
+            self.client.connect((self.wayfire_ipc_ip, int(self.wayfire_ipc_port)))
+        except Exception as e:
+            print(f"Caught exception socket.error : {e}")
+            print("Maybe you need to set WAYFIRE_IPC_IP and/or WAYFIRE_IPC_PORT")
 
-    def connect_client(self, socket_name):
-        self.client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.client.connect(socket_name)
 
     def close(self):
         self.client.close()
