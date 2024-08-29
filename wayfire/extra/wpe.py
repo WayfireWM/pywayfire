@@ -46,7 +46,7 @@ class WPE:
         message["data"]["saturation"] = saturation
         message["data"]["duration"] = duration
         return self.socket.send_json(message)
-    
+
     def capture_view_shot(self, id, filename):
         capture = get_msg_template("view-shot/capture")
         if capture is None:
@@ -73,4 +73,42 @@ class WPE:
     def unpin_view(self, view_id: int):
         message = get_msg_template("pin-view/unpin")
         message["data"]["view-id"] = view_id
+        return self.socket.send_json(message)
+
+    def set_view_shader(self, view_id: int, shader: str):
+        message = get_msg_template("wf/filters/set-view-shader")
+        message["data"] = {}
+        message["data"]["view-id"] = view_id
+        message["data"]["shader-path"] = shader
+        return self.socket.send_json(message)
+
+    def unset_view_shader(self, view_id: int):
+        message = get_msg_template("wf/filters/unset-view-shader")
+        message["data"] = {}
+        message["data"]["view-id"] = view_id
+        return self.socket.send_json(message)
+
+    def view_has_shader(self, view_id: int):
+        message = get_msg_template("wf/filters/view-has-shader")
+        message["data"] = {}
+        message["data"]["view-id"] = view_id
+        return self.socket.send_json(message)
+
+    def set_fs_shader(self, output_name: str, shader: str):
+        message = get_msg_template("wf/filters/set-fs-shader")
+        message["data"] = {}
+        message["data"]["output-name"] = output_name
+        message["data"]["shader-path"] = shader
+        return self.socket.send_json(message)
+
+    def unset_fs_shader(self, output_name: str):
+        message = get_msg_template("wf/filters/unset-fs-shader")
+        message["data"] = {}
+        message["data"]["output-name"] = output_name
+        return self.socket.send_json(message)
+
+    def fs_has_shader(self, output_name: str):
+        message = get_msg_template("wf/filters/fs-has-shader")
+        message["data"] = {}
+        message["data"]["output-name"] = output_name
         return self.socket.send_json(message)
