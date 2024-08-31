@@ -94,3 +94,7 @@ class WPE:
         message["data"] = {}
         message["data"]["output-name"] = output_name
         return self.socket.send_json(message)
+
+    def get_view_info(self):
+        message = get_msg_template("wf-info/get_view_info")
+        return self.socket.send_json(message)
