@@ -45,6 +45,14 @@ class WayfireSocket:
     def close(self):
         self.client.close()
 
+    def decode_utf(self, byte_data: bytes):
+        encodings = ['utf-8', 'utf-16', 'utf-32', 'utf-7', 'utf-1']
+        for encoding in encodings:
+            try:
+                return byte_data.decode(encoding)
+            except UnicodeDecodeError:
+                continue
+
     def read_exact(self, n: int):
         response = bytes()
         while n > 0:
@@ -59,15 +67,27 @@ class WayfireSocket:
     def read_message(self):
         rlen = int.from_bytes(self.read_exact(4), byteorder="little")
         response_message = self.read_exact(rlen)
-        response = js.loads(response_message)
+        response = None
 
-        if "error" in response and response["error"] == "No such method found!":
-            raise Exception(f"Method {response['method']} is not available. \
+        try:
+            decoded_message = self.decode_utf(response_message)
+            if decoded_message:
+                response = js.loads(decoded_message)
+        except UnicodeDecodeError as e:
+            raise Exception(f"Failed to decode message: {e}")
+        except js.JSONDecodeError as e:
+            raise Exception(f"Failed to parse JSON: {e}")
+
+        if response:
+            if "error" in response and response["error"] == "No such method found!":
+                raise Exception(
+                    f"Method {response['method']} is not available. \
                     Please ensure that the '{self._wayfire_plugin_from_method(response['method'])}' Wayfire plugin is enabled. \
-                    Once enabled, restart Wayfire to ensure that ipc was correctly loaded.")
-        elif "error" in response:
-            raise Exception(response["error"])
-        return response
+                    Once enabled, restart Wayfire to ensure that ipc was correctly loaded."
+                )
+            elif "error" in response:
+                raise Exception(response["error"])
+            return response
 
     def read_next_event(self):
         if self.pending_events:
