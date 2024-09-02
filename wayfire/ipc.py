@@ -46,7 +46,7 @@ class WayfireSocket:
         self.client.close()
 
     def decode_utf(self, byte_data: bytes):
-        encodings = ['utf-8', 'utf-16', 'utf-32', 'utf-7', 'utf-1']
+        encodings = ['utf-8', 'utf-16', 'utf-32']
         for encoding in encodings:
             try:
                 return byte_data.decode(encoding)
