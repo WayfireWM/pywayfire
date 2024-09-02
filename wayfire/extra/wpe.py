@@ -98,3 +98,8 @@ class WPE:
     def get_view_info(self):
         message = get_msg_template("wf-info/get_view_info")
         return self.socket.send_json(message)
+
+    def shade_toggle(self, view_id: int):
+        message = get_msg_template("pixdecor/shade_toggle")
+        message["data"]["view-id"] = view_id
+        return self.socket.send_json(message)
