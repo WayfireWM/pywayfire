@@ -78,9 +78,9 @@ class WayfireUtils:
             bool: True if the socket is active, False otherwise.
         """
         try:
-            stipc = Stipc(socket)
-            return stipc.ping()
-        except (OSError):
+            socket.client.getpeername()
+            return True
+        except OSError:
             return False
 
     def move_view_to_empty_workspace(self, view_id: int) -> None:
