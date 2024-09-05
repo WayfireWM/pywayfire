@@ -96,8 +96,16 @@ class WayfireSocket:
                 self.connect_client(self.socket_name)
                 raise Exception("Response timeout")
 
-    def read_exact(self, num_bytes):
-        return self.client.recv(num_bytes)
+    def read_exact(self, n: int):
+        response = bytes()
+        while n > 0:
+            read_this_time = self.client.recv(n)
+            if not read_this_time:
+                raise Exception("Failed to read anything from the socket!")
+            n -= len(read_this_time)
+            response += read_this_time
+
+        return response
 
     def read_next_event(self):
         if self.pending_events:
