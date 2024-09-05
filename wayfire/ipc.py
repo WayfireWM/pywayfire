@@ -109,7 +109,10 @@ class WayfireSocket:
     def read_next_event(self):
         if self.pending_events:
             return self.pending_events.pop(0)
-        return self.read_message()
+        try:
+            return self.read_message()
+        except Exception as e:
+            print(f"Error while trying read_next_event: {e}")
 
     def create_headless_output(self, width: int, height: int):
         """
