@@ -64,7 +64,7 @@ class WayfireSocket:
             raise Exception(response["error"])
         return response
 
-    def send_json(self, msg, timeout=10):
+    def send_json(self, msg, timeout=1):
         if 'method' not in msg:
             raise Exception("Malformed JSON request: missing method!")
 
@@ -92,6 +92,8 @@ class WayfireSocket:
 
                 return response
             else:
+                # The connection is closed due to a timeout
+                self.connect_client(self.socket_name)
                 raise Exception("Response timeout")
 
     def read_exact(self, num_bytes):
