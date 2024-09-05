@@ -12,6 +12,7 @@ class WayfireSocket:
             socket_name = os.getenv("WAYFIRE_SOCKET")
 
         self.socket_name = None
+        self.reconnect_on_client_timeout = True
         self.pending_events = []
 
         if socket_name is None and allow_manual_search:
@@ -92,9 +93,7 @@ class WayfireSocket:
 
                 return response
             else:
-                # The connection is closed due to a timeout
-                self.connect_client(self.socket_name)
-                raise Exception("Response timeout")
+                raise Exception("The client connection was closed due to a response timeout.")
 
     def read_exact(self, n: int):
         response = bytearray()
