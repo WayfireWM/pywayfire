@@ -97,7 +97,7 @@ class WayfireSocket:
                 raise Exception("Response timeout")
 
     def read_exact(self, n: int):
-        response = bytes()
+        response = bytearray()
         while n > 0:
             read_this_time = self.client.recv(n)
             if not read_this_time:
@@ -105,7 +105,7 @@ class WayfireSocket:
             n -= len(read_this_time)
             response += read_this_time
 
-        return response
+        return bytes(response)
 
     def read_next_event(self):
         if self.pending_events:
