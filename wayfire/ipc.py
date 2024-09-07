@@ -114,7 +114,6 @@ class WayfireSocket:
         while n > 0:
             read_this_time = self.client.recv(n)
             if not read_this_time:
-                self.connect_client(self.socket_name)
                 raise Exception("Failed to read anything from the socket!")
             n -= len(read_this_time)
             response += read_this_time
