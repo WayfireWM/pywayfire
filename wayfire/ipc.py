@@ -448,7 +448,6 @@ class WayfireSocket:
         message = get_msg_template(method)
         if events is not None:
             message["data"]["events"] = events
-            self.watching_events = True
         return self.send_json(message)
 
     def list_views(self, filter_mapped_toplevel=False) -> List[Any]:
