@@ -12,7 +12,6 @@ class WayfireSocket:
             socket_name = os.getenv("WAYFIRE_SOCKET")
 
         self.socket_name = None
-        self.reconnect_on_client_timeout = True
         self.pending_events = []
 
         if socket_name is None and allow_manual_search:
@@ -44,6 +43,17 @@ class WayfireSocket:
         self.client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.client.connect(socket_name)
 
+    def is_connected(self):
+        if self.client is None:
+            return False
+
+        try:
+            if self.client.fileno() < 0:
+                return False
+            return True
+        except (socket.error, ValueError):
+            return False
+
     def close(self):
         self.client.close()
 
@@ -71,8 +81,12 @@ class WayfireSocket:
 
         data = js.dumps(msg)
         header = len(data).to_bytes(4, byteorder="little")
-        self.client.send(header)
-        self.client.send(data)
+
+        if self.is_connected():
+            self.client.send(header)
+            self.client.send(data)
+        else:
+            raise Exception("Unable to send data: The Wayfire socket instance is not connected.")
 
         end_time = time.time() + timeout
         while True:
@@ -93,13 +107,14 @@ class WayfireSocket:
 
                 return response
             else:
-                raise Exception("The client connection was closed due to a response timeout.")
+                raise Exception("Response timeout")
 
     def read_exact(self, n: int):
         response = bytearray()
         while n > 0:
             read_this_time = self.client.recv(n)
             if not read_this_time:
+                self.connect_client(self.socket_name)
                 raise Exception("Failed to read anything from the socket!")
             n -= len(read_this_time)
             response += read_this_time
@@ -109,10 +124,7 @@ class WayfireSocket:
     def read_next_event(self):
         if self.pending_events:
             return self.pending_events.pop(0)
-        try:
-            return self.read_message()
-        except Exception as e:
-             raise Exception(f"Error while trying read_next_event: {e}")
+        return self.read_message()
 
     def create_headless_output(self, width: int, height: int):
         """
@@ -436,6 +448,7 @@ class WayfireSocket:
         message = get_msg_template(method)
         if events is not None:
             message["data"]["events"] = events
+            self.watching_events = True
         return self.send_json(message)
 
     def list_views(self, filter_mapped_toplevel=False) -> List[Any]:
