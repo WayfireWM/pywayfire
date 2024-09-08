@@ -64,26 +64,6 @@ class WayfireUtils:
         # Move the cursor to the calculated position
         self._stipc.move_cursor(cursor_x, cursor_y)
 
-    def is_socket_active(self, socket):
-        """
-        Check if the given socket is still active.
-
-        Args:
-            socket: The socket object to check.
-
-        Example:
-            socket = WayfireSocket()
-            is_socket_active(socket)
-
-        Returns:
-            bool: True if the socket is active, False otherwise.
-        """
-        try:
-            socket.client.getpeername()
-            return True
-        except OSError:
-            return False
-
     def move_view_to_empty_workspace(self, view_id: int) -> None:
         """
         Moves a top-level view to an empty workspace.
