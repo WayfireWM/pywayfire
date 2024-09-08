@@ -1,5 +1,5 @@
 import socket
-import orjson as js
+import json as js
 import select 
 import time
 import os
@@ -63,7 +63,7 @@ class WayfireSocket:
         if not response_message:
             raise Exception("Received empty response message")
         try:
-            response = js.loads(response_message)
+            response = js.loads(response_message.decode("utf-8"))
         except js.JSONDecodeError as e:
             raise Exception(f"JSON decoding error: {e}")
 
@@ -79,7 +79,7 @@ class WayfireSocket:
         if 'method' not in msg:
             raise Exception("Malformed JSON request: missing method!")
 
-        data = js.dumps(msg)
+        data = js.dumps(msg).encode("utf-8")
         header = len(data).to_bytes(4, byteorder="little")
 
         if self.is_connected():
