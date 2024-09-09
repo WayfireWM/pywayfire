@@ -43,15 +43,6 @@ class WayfireSocket:
         self.client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.client.connect(socket_name)
 
-    def is_header_data_sent(self, data, header):
-        try:
-            self.client.send(header)
-            self.client.send(data)
-        except Exception as e:
-            print(e)
-            return False
-        return True
-
     def is_connected(self):
         if self.client is None:
             return False
@@ -84,29 +75,6 @@ class WayfireSocket:
             raise Exception(response["error"])
         return response
 
-    def send_with_timeout(self, data, timeout):
-        self.client.setblocking(False)
-
-        end_time = time.time() + timeout
-        total_sent = 0
-
-        while total_sent < len(data):
-            remaining_time = end_time - time.time()
-            if remaining_time <= 0:
-                raise Exception("Send operation timed out.")
-
-            try:
-                sent = self.client.send(data[total_sent:])
-                if sent == 0:
-                    raise Exception("Socket connection broken.")
-                total_sent += sent
-            except BlockingIOError:
-                time.sleep(0.1)
-            except socket.error as e:
-                raise e
-
-        self.client.setblocking(True)
-
     def send_json(self, msg, timeout=1):
         if 'method' not in msg:
             raise Exception("Malformed JSON request: missing method!")
@@ -114,14 +82,11 @@ class WayfireSocket:
         data = js.dumps(msg).encode("utf-8")
         header = len(data).to_bytes(4, byteorder="little")
 
-        if not self.is_connected():
+        if self.is_connected():
+            self.client.send(header)
+            self.client.send(data)
+        else:
             raise Exception("Unable to send data: The Wayfire socket instance is not connected.")
-
-        try:
-            self.send_with_timeout(header, timeout)
-            self.send_with_timeout(data, timeout)
-        except Exception as e:
-            raise Exception(f"Error sending data: {e}")
 
         end_time = time.time() + timeout
         while True:
