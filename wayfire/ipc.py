@@ -13,6 +13,7 @@ class WayfireSocket:
 
         self.socket_name = None
         self.pending_events = []
+        self.timeout = 3
 
         if socket_name is None and allow_manual_search:
             # the last item is the most recent socket file
@@ -75,7 +76,7 @@ class WayfireSocket:
             raise Exception(response["error"])
         return response
 
-    def send_json(self, msg, timeout=1):
+    def send_json(self, msg):
         if 'method' not in msg:
             raise Exception("Malformed JSON request: missing method!")
 
@@ -88,7 +89,7 @@ class WayfireSocket:
         else:
             raise Exception("Unable to send data: The Wayfire socket instance is not connected.")
 
-        end_time = time.time() + timeout
+        end_time = time.time() + self.timeout
         while True:
             remaining_time = end_time - time.time()
             if remaining_time <= 0:
