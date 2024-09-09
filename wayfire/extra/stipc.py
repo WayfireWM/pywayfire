@@ -100,7 +100,7 @@ class Stipc:
 
     def create_wayland_output(self):
         message = get_msg_template("stipc/create_wayland_output")
-        self.socket.send_json(message)
+        self.socket.send_json(message, timeout=10)
 
     def destroy_wayland_output(self, output: str):
         method = "stipc/destroy_wayland_output"
