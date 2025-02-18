@@ -1,9 +1,10 @@
 import socket
 import json as js
+import select 
+import time
 import os
 from typing import Any, List, Optional
 from wayfire.core.template import get_msg_template, geometry_to_json
-
 
 class WayfireSocket:
     def __init__(self, socket_name: str | None=None, allow_manual_search=False):
@@ -12,6 +13,7 @@ class WayfireSocket:
 
         self.socket_name = None
         self.pending_events = []
+        self.timeout = 3
 
         if socket_name is None and allow_manual_search:
             # the last item is the most recent socket file
@@ -42,24 +44,29 @@ class WayfireSocket:
         self.client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.client.connect(socket_name)
 
+    def is_connected(self):
+        if self.client is None:
+            return False
+
+        try:
+            if self.client.fileno() < 0:
+                return False
+            return True
+        except (socket.error, ValueError):
+            return False
+
     def close(self):
         self.client.close()
-
-    def read_exact(self, n: int):
-        response = bytes()
-        while n > 0:
-            read_this_time = self.client.recv(n)
-            if not read_this_time:
-                raise Exception("Failed to read anything from the socket!")
-            n -= len(read_this_time)
-            response += read_this_time
-
-        return response
 
     def read_message(self):
         rlen = int.from_bytes(self.read_exact(4), byteorder="little")
         response_message = self.read_exact(rlen)
-        response = js.loads(response_message)
+        if not response_message:
+            raise Exception("Received empty response message")
+        try:
+            response = js.loads(response_message.decode("utf-8"))
+        except js.JSONDecodeError as e:
+            raise Exception(f"JSON decoding error: {e}")
 
         if "error" in response and response["error"] == "No such method found!":
             raise Exception(f"Method {response['method']} is not available. \
@@ -68,6 +75,51 @@ class WayfireSocket:
         elif "error" in response:
             raise Exception(response["error"])
         return response
+
+    def send_json(self, msg):
+        if 'method' not in msg:
+            raise Exception("Malformed JSON request: missing method!")
+
+        data = js.dumps(msg).encode("utf-8")
+        header = len(data).to_bytes(4, byteorder="little")
+
+        if self.is_connected():
+            self.client.send(header)
+            self.client.send(data)
+        else:
+            raise Exception("Unable to send data: The Wayfire socket instance is not connected.")
+
+        end_time = time.time() + self.timeout
+        while True:
+            remaining_time = end_time - time.time()
+            if remaining_time <= 0:
+                raise Exception("Response timeout")
+
+            readable, _, _ = select.select([self.client], [], [], remaining_time)
+            if readable:
+                try:
+                    response = self.read_message()
+                except Exception as e:
+                    raise Exception(f"Error reading message: {e}")
+
+                if 'event' in response:
+                    self.pending_events.append(response)
+                    continue
+
+                return response
+            else:
+                raise Exception("Response timeout")
+
+    def read_exact(self, n: int):
+        response = bytearray()
+        while n > 0:
+            read_this_time = self.client.recv(n)
+            if not read_this_time:
+                raise Exception("Failed to read anything from the socket!")
+            n -= len(read_this_time)
+            response += read_this_time
+
+        return bytes(response)
 
     def read_next_event(self):
         if self.pending_events:
@@ -276,23 +328,6 @@ class WayfireSocket:
             return "unknown"
 
         return method.split("/")[0]
-
-    def send_json(self, msg):
-        if 'method' not in msg:
-            raise Exception("Malformed json request: missing method!")
-
-        data = js.dumps(msg).encode("utf8")
-        header = len(data).to_bytes(4, byteorder="little")
-        self.client.send(header)
-        self.client.send(data)
-
-        while True:
-            response = self.read_message()
-            if 'event' in response:
-                self.pending_events.append(response)
-                continue
-
-            return response
 
     def get_output(self, output_id: int):
         """
