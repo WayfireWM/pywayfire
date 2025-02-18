@@ -20,7 +20,7 @@ while True:
     if "event" in msg:
         view = msg["view"]
         if view["app-id"] == "gedit":
-            output_data = sock.get_output(view["output"])
+            output_data = sock.get_output(view["output-id"])
             print(output_data)
             workarea = output_data["workarea"]
 
