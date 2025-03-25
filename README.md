@@ -4,7 +4,11 @@ The [Wayfire] compositor provides access to its functionalities via Inter-Proces
 
 ### Installation
 ```
+Python
 pip install wayfire
+
+AUR
+yay -S python-wayfire
 ```
 
 OR
