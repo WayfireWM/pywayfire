@@ -884,7 +884,7 @@ class WayfireSocket:
             tuple[float, float]: (x, y) coordinates in pixels relative to the output.
 
         Example:
-            >>> x, y = get_cursor_position()
+            >>> x, y = socket.get_cursor_position()
             >>> print(f"Cursor at ({x}, {y})")
 
         Note:
