@@ -28,6 +28,7 @@ plugins = \
   ipc \
   ipc-rules \
   stipc
+  ...
 ```
 
 ### Usage examples
@@ -47,6 +48,6 @@ Many examples can be found in the `scripts` directory.
 
 **"Failed to find a suitable Wayfire socket!"**
 
-Make sure `ipc` and `ip-rules` plugins are activated. Try runing with environmental variable:
+Make sure `ipc` and `ip-rules` plugins are activated. Try running with environmental variable:
 `WAYFIRE_SOCKET=/run/user/$(id -u)/wayland-1`
 
