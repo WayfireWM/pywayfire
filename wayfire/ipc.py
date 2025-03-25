@@ -1,15 +1,13 @@
-import json as js
-import os
-import select
 import socket
+import json as js
+import select 
 import time
+import os
 from typing import Any, List, Optional
-
-from wayfire.core.template import geometry_to_json, get_msg_template
-
+from wayfire.core.template import get_msg_template, geometry_to_json
 
 class WayfireSocket:
-    def __init__(self, socket_name: str | None = None, allow_manual_search=False):
+    def __init__(self, socket_name: str | None=None, allow_manual_search=False):
         if socket_name is None:
             socket_name = os.getenv("WAYFIRE_SOCKET")
 
@@ -148,7 +146,7 @@ class WayfireSocket:
         message["data"]["height"] = height
         return self.send_json(message)
 
-    def destroy_headless_output(self, output_name: Optional[str] = None, output_id: Optional[int] = None):
+    def destroy_headless_output(self, output_name: Optional[str]=None, output_id: Optional[int]=None):
         """
         Destroys a headless output identified by its name or ID.
 
@@ -180,11 +178,11 @@ class WayfireSocket:
         self,
         binding: str,
         *,
-        call_method: Optional[str] = None,
+        call_method: Optional[str]=None,
         call_data=None,
-        command: Optional[str] = None,
-        mode: Optional[str] = None,
-        exec_always: bool = False,
+        command: Optional[str]=None,
+        mode: Optional[str]=None,
+        exec_always: bool=False,
     ):
         """
         Registers a new key or mouse binding.
@@ -252,6 +250,7 @@ class WayfireSocket:
         return self.send_json(message)
 
     def get_option_value(self, option: str):
+
         """
         Retrieves the current value of a specified internal configuration option.
 
@@ -474,7 +473,7 @@ class WayfireSocket:
             return [v for v in views if v["mapped"] is True and v["role"] != "desktop-environment" and v["pid"] != -1]
         return views
 
-    def configure_view(self, view_id: int, x: int, y: int, w: int, h: int, output_id=None):
+    def configure_view(self, view_id: int, x: int, y: int, w: int, h: int, output_id = None):
         """
         Configures the properties of a specific view.
 
@@ -677,7 +676,7 @@ class WayfireSocket:
         message = get_msg_template("expo/toggle")
         self.send_json(message)
 
-    def set_workspace(self, workspace_x: int, workspace_y: int, view_id: Optional[int] = None, output_id: Optional[int] = None):
+    def set_workspace(self, workspace_x: int, workspace_y: int, view_id: Optional[int]=None, output_id: Optional[int]=None):
         """
         Sets the workspace on a specific output and optionally moves a view to that workspace.
 
@@ -876,24 +875,6 @@ class WayfireSocket:
         """
         message = get_msg_template("input/list-devices")
         return self.send_json(message)
-
-    def get_cursor_position(self):
-        """
-        Get the current cursor coordinates.
-
-        Returns:
-            tuple[float, float]: (x, y) coordinates in pixels relative to the output.
-
-        Example:
-            >>> x, y = get_cursor_position()
-            >>> print(f"Cursor at ({x}, {y})")
-
-        Note:
-            Coordinates are floating-point values for sub-pixel precision.
-        """
-        message = get_msg_template("window-rules/get_cursor_position")
-        coord = self.send_json(message)
-        return (coord["pos"]["x"], coord["pos"]["y"])
 
     def get_tiling_layout(self, wset: int, x: int, y: int):
         """
