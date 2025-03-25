@@ -876,6 +876,24 @@ class WayfireSocket:
         message = get_msg_template("input/list-devices")
         return self.send_json(message)
 
+    def get_cursor_position(self):
+        """
+        Get the current cursor coordinates.
+
+        Returns:
+            tuple[float, float]: (x, y) coordinates in pixels relative to the output.
+
+        Example:
+            >>> x, y = get_cursor_position()
+            >>> print(f"Cursor at ({x}, {y})")
+
+        Note:
+            Coordinates are floating-point values for sub-pixel precision.
+        """
+        message = get_msg_template("window-rules/get_cursor_position")
+        coord = self.send_json(message)
+        return (coord["pos"]["x"], coord["pos"]["y"])
+
     def get_tiling_layout(self, wset: int, x: int, y: int):
         """
         Retrieves the tiling layout for a specific workspace and workspace set.
