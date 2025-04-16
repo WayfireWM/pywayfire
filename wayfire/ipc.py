@@ -343,7 +343,7 @@ class WayfireSocket:
             output.
         """
         message = get_msg_template("window-rules/output-info")
-        message["data"]["id"] = output_id
+        message["data"]["output-id"] = output_id
         return self.send_json(message)
 
     def list_outputs(self):
@@ -387,7 +387,7 @@ class WayfireSocket:
             the specified workspace set.
         """
         message = get_msg_template("window-rules/wset-info")
-        message["data"]["id"] = id
+        message["data"]["wset-index"] = id
         return self.send_json(message)
 
     def send_view_to_wset(self, view_id: int, wset_index: int):
@@ -493,7 +493,7 @@ class WayfireSocket:
             The response from sending the JSON message, which confirms the configuration of the view.
         """
         message = get_msg_template("window-rules/configure-view")
-        message["data"]["id"] = view_id
+        message["data"]["view-id"] = view_id
         message["data"]["geometry"] = geometry_to_json(x, y, w, h)
         if output_id is not None:
             message["data"]["output_id"] = output_id
@@ -544,7 +544,7 @@ class WayfireSocket:
             >>> assign_slot(9, "slot_c")
         """
         message = get_msg_template("grid/" + slot)
-        message["data"]["view_id"] = view_id
+        message["data"]["view-id"] = view_id
         return self.send_json(message)
 
     def set_focus(self, view_id: int):
@@ -561,7 +561,7 @@ class WayfireSocket:
             The response from sending the JSON message, which confirms the focus change to the specified view.
         """
         message = get_msg_template("window-rules/focus-view")
-        message["data"]["id"] = view_id
+        message["data"]["view-id"] = view_id
         return self.send_json(message)
 
     def get_view(self, view_id: int):
@@ -579,7 +579,7 @@ class WayfireSocket:
                   includes various attributes related to the view.
         """
         message = get_msg_template("window-rules/view-info")
-        message["data"]["id"] = view_id
+        message["data"]["view-id"] = view_id
         return self.send_json(message)["info"]
 
     def configure_input_device(self, id: int, enabled: bool):
@@ -615,7 +615,7 @@ class WayfireSocket:
             The response from sending the JSON message, which confirms the request to close the specified view.
         """
         message = get_msg_template("window-rules/close-view")
-        message["data"]["id"] = view_id
+        message["data"]["view-id"] = view_id
         return self.send_json(message)
 
     def get_focused_view(self):
@@ -668,7 +668,7 @@ class WayfireSocket:
                   state of the specified view.
         """
         message = get_msg_template("wm-actions/set-fullscreen")
-        message["data"]["view_id"] = view_id
+        message["data"]["view-id"] = view_id
         message["data"]["state"] = state
         self.send_json(message)
 
@@ -730,7 +730,7 @@ class WayfireSocket:
                   sticky state.
         """
         message = get_msg_template("wm-actions/set-sticky")
-        message["data"]["view_id"] = view_id
+        message["data"]["view-id"] = view_id
         message["data"]["state"] = state
         return self.send_json(message)
 
@@ -752,7 +752,7 @@ class WayfireSocket:
                   z-order state.
         """
         message = get_msg_template("wm-actions/send-to-back")
-        message["data"]["view_id"] = view_id
+        message["data"]["view-id"] = view_id
         message["data"]["state"] = state
         return self.send_json(message)
 
@@ -773,7 +773,7 @@ class WayfireSocket:
                   minimized state.
         """
         message = get_msg_template("wm-actions/set-minimized")
-        message["data"]["view_id"] = view_id
+        message["data"]["view-id"] = view_id
         message["data"]["state"] = state
         return self.send_json(message)
 
@@ -819,7 +819,7 @@ class WayfireSocket:
                   "always on top" state.
         """
         message = get_msg_template("wm-actions/set-always-on-top")
-        message["data"]["view_id"] = view_id
+        message["data"]["view-id"] = view_id
         message["data"]["state"] = always_on_top
         return self.send_json(message)
 
