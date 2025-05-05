@@ -150,20 +150,31 @@ def main():
         print("Destroying headless output")
         sock.destroy_headless_output(headless_output_name)
 
-        print("Registering binding")
-        binding_response = sock.register_binding(
-            binding="<ctrl><super><alt> KEY_T",
-            call_method="scale/toggle",  # use sock.list_methods for more info
-            call_data={},
-            exec_always=True,
-            mode="normal",
-        )
+        def register_binding():
+            print("Registering binding")
+            return sock.register_binding(
+                binding="<ctrl><super><alt> KEY_T",
+                call_method="scale/toggle",  # use sock.list_methods for more info
+                call_data={},
+                exec_always=True,
+                mode="normal",
+            )
+
+        sock.unregister_binding(register_binding()["binding-id"])
         print("Unregistering binding")
-        sock.unregister_binding(binding_response["binding-id"])
+
+        print("Registering binding again to test clear_bindings")
+        register_binding()
+        print("Clearing bindings")
+        sock.clear_bindings()
 
         # Restore original state
         restore_state(view_id, original_alpha, original_sticky, original_fullscreen)
+
+        print(f"Closing {TERMINAL}")
         sock.close_view(view_id)
+
+        print("Tests finished ✅")
 
     except Exception as e:
         print(f"[ERROR] {e}")
