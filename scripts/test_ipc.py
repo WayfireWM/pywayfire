@@ -137,7 +137,29 @@ def main():
         sock.get_option_value("core/plugins")
         sock.get_configuration()
         sock.get_output(focused_output_id)
+
+        print("Using list functions")
         sock.list_views()
+        sock.list_methods()
+        sock.list_input_devices()
+        sock.list_wsets()
+        sock.list_outputs()
+
+        print("Creating headless output")
+        headless_output_name = sock.create_headless_output(100, 100)["output"]["name"]
+        print("Destroying headless output")
+        sock.destroy_headless_output(headless_output_name)
+
+        print("Registering binding")
+        binding_response = sock.register_binding(
+            binding="<ctrl><super><alt> KEY_T",
+            call_method="scale/toggle",  # use sock.list_methods for more info
+            call_data={},
+            exec_always=True,
+            mode="normal",
+        )
+        print("Unregistering binding")
+        sock.unregister_binding(binding_response["binding-id"])
 
         # Restore original state
         restore_state(view_id, original_alpha, original_sticky, original_fullscreen)
