@@ -147,6 +147,7 @@ def main():
 
         print("Creating headless output")
         headless_output_name = sock.create_headless_output(100, 100)["output"]["name"]
+
         print("Destroying headless output")
         sock.destroy_headless_output(headless_output_name)
 
@@ -165,6 +166,7 @@ def main():
 
         print("Registering binding again to test clear_bindings")
         register_binding()
+
         print("Clearing bindings")
         sock.clear_bindings()
 
