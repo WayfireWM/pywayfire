@@ -145,6 +145,11 @@ def main():
         sock.list_wsets()
         sock.list_outputs()
 
+        print(f"Assign {TERMINAL} to the slots")
+        positions = ["tl", "tr", "bl", "br", "br", "t", "b", "l", "r", "c"]
+        for position in positions:
+            sock.assign_slot(view_id, f"slot_{position}")
+
         print("Creating headless output")
         headless_output_name = sock.create_headless_output(100, 100)["output"]["name"]
 
