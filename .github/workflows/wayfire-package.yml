@@ -4,6 +4,7 @@ name: Python package
 on:
   release:
     types: [created]
+  push:
     
 jobs:
   build:
@@ -34,7 +35,7 @@ jobs:
     name: >-
       Publish Python 🐍 distribution 📦 to PyPI
     # comment this line to publish every git push
-    if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
+    #if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
     environment:
       name: release
       url: https://pypi.org/p/wayfire
@@ -48,7 +49,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install
-      if: github.event_name == 'release'
+      #if: github.event_name == 'release'
       run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
