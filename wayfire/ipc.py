@@ -177,6 +177,11 @@ class WayfireSocket:
         message = get_msg_template("wayfire/get-keyboard-state")
         return self.send_json(message)
 
+    def set_keyboard_layout(self, index: int):
+        message = get_msg_template("wayfire/set-keyboard-state")
+        message['data']['layout-index'] = index
+        return self.send_json(message)
+
     def register_binding(
 
         self,
