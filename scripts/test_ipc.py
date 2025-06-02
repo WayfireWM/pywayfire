@@ -1,4 +1,4 @@
-from wayfire.ipc import WayfireSocket
+from wayfire import WayfireSocket
 import subprocess
 import time
 import sys
@@ -125,7 +125,7 @@ def main():
         wset_index = view["wset-index"]
         sock.send_view_to_wset(view_id, wset_index)
 
-        print("setting output wset")
+        print("Setting output wset")
         output_id = view["output-id"]
         sock.set_output_wset(output_id, wset_index)
 
@@ -137,6 +137,10 @@ def main():
         sock.get_option_value("core/plugins")
         sock.get_configuration()
         sock.get_output(focused_output_id)
+        layout_index = sock.get_keyboard_layout()["layout-index"]
+
+        print("Setting keyboard layout")
+        sock.set_keyboard_layout(layout_index)
 
         print("Using list functions")
         sock.list_views()
