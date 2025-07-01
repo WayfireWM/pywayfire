@@ -173,6 +173,15 @@ class WayfireSocket:
         message = get_msg_template("wayfire/configuration")
         return self.send_json(message)
 
+    def get_keyboard_layout(self):
+        message = get_msg_template("wayfire/get-keyboard-state")
+        return self.send_json(message)
+
+    def set_keyboard_layout(self, index: int):
+        message = get_msg_template("wayfire/set-keyboard-state")
+        message['data']['layout-index'] = index
+        return self.send_json(message)
+
     def register_binding(
 
         self,
@@ -323,6 +332,8 @@ class WayfireSocket:
         if method.startswith("wf/filters"):
             return "filters (soreau/filters)"
         if method.startswith("window-rules"):
+            return "ipc-rules"
+        if method.startswith("wayfire"):
             return "ipc-rules"
         if "/" not in method:
             return "unknown"
