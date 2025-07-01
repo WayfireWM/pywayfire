@@ -720,14 +720,15 @@ class WayfireSocket:
             message["data"]["view-id"] = view_id
         return self.send_json(message)
 
-    def send_view_to_workspace(self, x: int, y: int, view_id: int):
+    def send_view_to_workspace(self, view_id: int, x: int, y: int):
         """
         Sends a request to move a specific view to the specified workspace coordinates.
     
         Args:
+            view_id (int): The unique ID of the view to be moved.
             x (int): Target workspace x-coordinate.
             y (int): Target workspace y-coordinate.
-            view_id (int): The unique ID of the view to be moved.
+
     
         Returns:
             dict: The response from sending the JSON message, 
