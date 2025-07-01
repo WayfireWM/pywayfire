@@ -720,6 +720,25 @@ class WayfireSocket:
             message["data"]["view-id"] = view_id
         return self.send_json(message)
 
+    def send_view_to_workspace(self, x: int, y: int, view_id: int):
+        """
+        Sends a request to move a specific view to the specified workspace coordinates.
+    
+        Args:
+            x (int): Target workspace x-coordinate.
+            y (int): Target workspace y-coordinate.
+            view_id (int): The unique ID of the view to be moved.
+    
+        Returns:
+            dict: The response from sending the JSON message, 
+                  which typically confirms the view was sent to the specified coordinates.
+        """
+        message = get_msg_template("vswitch/send-view")
+        message["data"]["x"] = x
+        message["data"]["y"] = y
+        message["data"]["view-id"] = view_id
+        return self.send_json(message)
+
     def toggle_showdesktop(self):
         message = get_msg_template("wm-actions/toggle_showdesktop")
         return self.send_json(message)
