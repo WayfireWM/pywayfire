@@ -4,7 +4,7 @@
 
 import gi
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, GLib
+from gi.repository import Gtk, Gdk, GLib
 import wayfire
 
 class MyWindow(Gtk.ApplicationWindow):
@@ -18,10 +18,21 @@ class MyWindow(Gtk.ApplicationWindow):
         self.label = Gtk.Label()
         self.label.set_valign(Gtk.Align.START)
         self.label.set_selectable(True)
+        click_gesture = Gtk.GestureClick()
+        click_gesture.set_button(Gdk.BUTTON_PRIMARY)
+        click_gesture.connect("released", self.on_click_released)
+        click_gesture.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         self.scrolled_window.set_child(self.label)
-        self.set_child(self.scrolled_window)
+        self.overlay_label = Gtk.Label(label="Text copied to clipboard")
+        self.overlay_label.set_halign(Gtk.Align.CENTER)
+        self.overlay_label.set_valign(Gtk.Align.CENTER)
+        self.overlay = Gtk.Overlay()
+        self.overlay.add_controller(click_gesture)
+        self.overlay.set_child(self.scrolled_window)
+        self.set_child(self.overlay)
         vadjustment = self.scrolled_window.get_vadjustment()
         vadjustment.connect("changed", self.on_vadjustment_changed)
+        self.clipboard = Gdk.Display.get_default().get_clipboard()
 
         self.wf_socket = wayfire.WayfireSocket()
         self.wf_socket.watch()
@@ -29,6 +40,22 @@ class MyWindow(Gtk.ApplicationWindow):
 
         self.line_number = 1
         self.last_vadjustment = 0
+        self.toast_timeout = None
+
+    def on_toast_timeout(self):
+        self.overlay.remove_overlay(self.overlay_label)
+        self.toast_timeout = None
+        return False
+
+    def on_click_released(self, gesture, n_press, x, y):
+        bounds = self.label.get_selection_bounds()
+        selected_text = self.label.get_text()[bounds.start:bounds.end]
+        if self.clipboard and selected_text:
+            self.clipboard.set_content(Gdk.ContentProvider.new_for_value(selected_text))
+            self.overlay.add_overlay(self.overlay_label)
+            if self.toast_timeout:
+                GLib.source_remove(self.toast_timeout)
+            self.toast_timeout = GLib.timeout_add(2000, self.on_toast_timeout)
 
     def idle_vadjustment_changed(self, vadjustment):
         vadjustment.set_value(vadjustment.get_upper())
