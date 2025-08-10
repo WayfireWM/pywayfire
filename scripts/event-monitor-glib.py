@@ -5,6 +5,7 @@
 import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gdk, GLib
+import signal
 import wayfire
 
 class MyWindow(Gtk.ApplicationWindow):
@@ -41,6 +42,15 @@ class MyWindow(Gtk.ApplicationWindow):
         self.line_number = 1
         self.last_vadjustment = 0
         self.toast_timeout = None
+
+        self.connect("close-request", self.on_window_close)
+        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self.on_sigint)
+
+    def on_window_close(self, window):
+        self.get_application().quit()
+
+    def on_sigint(self):
+        self.get_application().quit()
 
     def on_toast_timeout(self):
         self.overlay.remove_overlay(self.overlay_label)
