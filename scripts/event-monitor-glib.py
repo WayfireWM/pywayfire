@@ -28,12 +28,15 @@ class MyWindow(Gtk.ApplicationWindow):
         GLib.io_add_watch(self.wf_socket.client.fileno(), GLib.IO_IN, self.on_wf_event)
 
         self.line_number = 1
+        self.last_vadjustment = 0
 
     def idle_vadjustment_changed(self, vadjustment):
         vadjustment.set_value(vadjustment.get_upper())
 
     def on_vadjustment_changed(self, vadjustment):
-        GLib.idle_add(self.idle_vadjustment_changed, vadjustment)
+        if vadjustment.get_value() == self.last_vadjustment:
+            GLib.idle_add(self.idle_vadjustment_changed, vadjustment)
+        self.last_vadjustment = vadjustment.get_upper() - vadjustment.get_page_size()
 
     def on_wf_event(self, source, condition):
        if condition & GLib.IO_IN:
