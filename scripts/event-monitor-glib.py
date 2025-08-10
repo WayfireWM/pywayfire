@@ -17,6 +17,7 @@ class MyWindow(Gtk.ApplicationWindow):
         self.scrolled_window.set_size_request(400, 300)
         self.label = Gtk.Label()
         self.label.set_valign(Gtk.Align.START)
+        self.label.set_selectable(True)
         self.scrolled_window.set_child(self.label)
         self.set_child(self.scrolled_window)
         vadjustment = self.scrolled_window.get_vadjustment()
@@ -26,6 +27,8 @@ class MyWindow(Gtk.ApplicationWindow):
         self.wf_socket.watch()
         GLib.io_add_watch(self.wf_socket.client.fileno(), GLib.IO_IN, self.on_wf_event)
 
+        self.line_number = 1
+
     def idle_vadjustment_changed(self, vadjustment):
         vadjustment.set_value(vadjustment.get_upper())
 
@@ -34,7 +37,11 @@ class MyWindow(Gtk.ApplicationWindow):
 
     def on_wf_event(self, source, condition):
        if condition & GLib.IO_IN:
-           self.label.set_label(self.label.get_text() + str(self.wf_socket.read_next_event()) + '\n')
+           self.label.set_markup("<span font_family='monospace'>" + \
+               self.label.get_text() + " " + \
+               str(self.line_number).rjust(2) + ": " + \
+               str(self.wf_socket.read_next_event()) + "\n</span>")
+           self.line_number += 1
        return True
 
 def on_activate(app):
