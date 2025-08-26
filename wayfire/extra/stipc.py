@@ -235,7 +235,7 @@ class Stipc:
                 - If True, the button is pressed at the start and released at the end.
                   Warning: if the script or process is killed before reaching the release 
                   step, the button may remain logically pressed. To recover, call:
-                      self.click_button(button, "release")
+                      click_button(button, "release")
                 - If False, the drag ends with the button still pressed, leaving manual 
                   control of when to release.
             steps (int, optional): The number of steps to divide the drag motion into. Defaults to 10.
