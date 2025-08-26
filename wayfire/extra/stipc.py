@@ -247,7 +247,7 @@ class Stipc:
             click_and_drag("BTN_LEFT", 100, 200, 300, 400, release=False)
             # Performs the drag but keeps the button pressed. 
             # Later, you must call:
-            #     self.click_button("BTN_LEFT", "release")
+            #     click_button("BTN_LEFT", "release")
 
         Returns:
             None: This method performs actions without returning a value.
