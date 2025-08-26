@@ -230,12 +230,24 @@ class Stipc:
             start_y (int): The y-coordinate of the starting position.
             end_x (int): The x-coordinate of the ending position.
             end_y (int): The y-coordinate of the ending position.
-            release (bool, optional): Whether to release the mouse button after dragging. Defaults to True.
+            release (bool, optional): Whether to release the mouse button after dragging. 
+                Defaults to True.
+                - If True, the button is pressed at the start and released at the end.
+                  Warning: if the script or process is killed before reaching the release 
+                  step, the button may remain logically pressed. To recover, call:
+                      self.click_button(button, "release")
+                - If False, the drag ends with the button still pressed, leaving manual 
+                  control of when to release.
             steps (int, optional): The number of steps to divide the drag motion into. Defaults to 10.
 
         Example:
             click_and_drag("BTN_LEFT", 100, 200, 300, 400, release=True, steps=20)
             # Simulates a left mouse button click-and-drag from (100, 200) to (300, 400) with 20 steps.
+
+            click_and_drag("BTN_LEFT", 100, 200, 300, 400, release=False)
+            # Performs the drag but keeps the button pressed. 
+            # Later, you must call:
+            #     self.click_button("BTN_LEFT", "release")
 
         Returns:
             None: This method performs actions without returning a value.
