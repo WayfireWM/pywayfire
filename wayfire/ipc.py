@@ -1052,3 +1052,20 @@ class WayfireSocket:
         msg["data"]["workspace"]["y"] = y
         msg["data"]["layout"] = layout
         return self.send_json(msg)
+
+    def set_tiling_maximized(self, view_id: int, show_maximized: bool):
+        """
+            Set the maximized state of the currently focused tiled view.  
+        Args:
+            view_id (int): The unique ID of the tiled view.
+            show_maximized (bool): True to set the view as 'show-maximized', False to unset it.
+    
+        Returns:
+            dict: The response from sending the JSON message. Contains "success" if the 'show-maximized' 
+                  state was successfully set to the requested value (True or False), or "error" if 
+                  the view is not found or not tiled.
+        """
+        message = get_msg_template("simple-tile/set-show-maximized")
+        message["data"]["view-id"] = view_id
+        message["data"]["show-maximized"] = show_maximized
+        return self.send_json(message)
