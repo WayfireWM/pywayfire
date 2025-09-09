@@ -258,6 +258,47 @@ class WayfireSocket:
         message = get_msg_template("command/clear-bindings")
         return self.send_json(message)
 
+    def list_config_options(self):
+        """
+        Retrieve the complete Wayfire configuration as a nested JSON object.
+    
+        This method fetches all configuration sections and their respective options.
+        For each option, it returns the current value. For non-compound options,
+        it also includes the default value.
+    
+        Returns:
+            A JSON object with the following structure:
+            {
+                "options": {
+                    "<section_name>": {
+                        "<option_name>": {
+                            "value": <current_value>,
+                            "default": <default_value>  # Only for non-compound options
+                        },
+                        ...
+                    },
+                    ...
+                }
+            }
+    
+        Example:
+            For a simple (non-compound) option like 'core/plugins':
+                "plugins": {
+                    "value": "alpha autostart blur ...",
+                    "default": "alpha animate autostart ..."
+                }
+    
+            For a compound option like 'command/bindings':
+                "bindings": {
+                    "value": [
+                        ["hello", "kitty", "<alt> KEY_ENTER"],
+                        ["world", "wayland-logout", "<alt> KEY_M"]
+                    ]
+                }
+        """
+        message = get_msg_template("wayfire/list-config-options")
+        return self.send_json(message)
+
     def get_option_value(self, option: str):
 
         """
