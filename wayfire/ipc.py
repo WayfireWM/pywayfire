@@ -849,13 +849,52 @@ class WayfireSocket:
         message["data"]["state"] = state
         return self.send_json(message)
 
-    def scale_toggle(self):
+    def scale_toggle(self, output_id: Optional[int]=None) -> bool:
+        """
+        Toggle scale mode showing views from the current workspace.
+        
+        If no output ID is provided, toggles scale mode for the currently focused output.
+        
+        Args:
+            output_id: ID of the specific output to toggle scale mode for.
+                       If None, toggles scale mode for the focused output.
+        
+        Returns:
+            bool: Always returns True indicating the message was sent successfully.
+                
+        Example:
+            >>> toggle_focused = scale_toggle()  # Toggle focused output
+            >>> toggle_specific = scale_toggle(1)  # Toggle output with ID 1
+        """
         message = get_msg_template("scale/toggle")
+        if output_id:
+            message["data"]["output-id"] = output_id
         self.send_json(message)
         return True
 
-    def scale_toggle_all(self):
+    def scale_toggle_all(self, output_id: Optional[int]=None) -> bool:
+        """
+        Toggle scale mode showing views from all workspaces.
+        
+        Unlike scale_toggle() which only shows views from the current workspace,
+        this mode displays views from all workspaces simultaneously when toggled.
+
+        If no output ID is provided, toggles scale mode for the currently focused output.
+        
+        Args:
+            output_id: ID of the specific output to toggle the all-workspaces scale mode for.
+                       If None, applies to the focused output.
+        
+        Returns:
+            bool: Always returns True indicating the message was sent successfully.
+                
+        Example:
+            >>> toggle_all_workspaces = scale_toggle_all()  # Toggle on focused output
+            >>> toggle_specific_output = scale_toggle_all(1)  # Toggle on output ID 1
+        """
         message = get_msg_template("scale/toggle_all")
+        if output_id:
+            message["data"]["output-id"] = output_id
         self.send_json(message)
         return True
 
