@@ -10,7 +10,6 @@ class WayfireSocket:
     def __init__(self, socket_name: str | None=None, allow_manual_search=False):
         if socket_name is None:
             socket_name = os.getenv("WAYFIRE_SOCKET")
-    
         self.socket_name = None
         self.pending_events = []
         self.timeout = 3
