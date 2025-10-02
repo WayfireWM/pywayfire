@@ -7,8 +7,7 @@ from typing import Any, List, Optional
 from wayfire.core.template import get_msg_template, geometry_to_json
 
 class WayfireSocket:
-    def __init__(self, socket_name: str | None=None, allow_manual_search=True):
-
+    def __init__(self, socket_name: str | None=None, allow_manual_search=False):
         if socket_name is None:
             env_socket = os.getenv("WAYFIRE_SOCKET")
             socket_name = env_socket.strip() if env_socket else None
@@ -36,7 +35,16 @@ class WayfireSocket:
                     pass
 
         if self.socket_name is None:
-            raise Exception("Failed to find a suitable Wayfire socket!")
+            if not allow_manual_search:
+                raise Exception(
+                    "Failed to find a suitable Wayfire socket! "
+                    "Try allow_manual_search=True to look in standard locations."
+                )
+            else:
+                raise Exception(
+                    "Failed to find a suitable Wayfire socket! "
+                    "Manual search was performed but found no working socket. "
+                )
 
     def _find_candidate_sockets(self) -> List[str]:
         socket_list = []
