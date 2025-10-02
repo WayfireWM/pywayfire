@@ -10,10 +10,11 @@ class WayfireSocket:
     def __init__(self, socket_name: str | None=None, allow_manual_search=False):
         if socket_name is None:
             socket_name = os.getenv("WAYFIRE_SOCKET")
+
         self.socket_name = None
         self.pending_events = []
         self.timeout = 3
-    
+
         if socket_name is None and allow_manual_search:
             # the last item is the most recent socket file
             socket_list = []
@@ -22,7 +23,7 @@ class WayfireSocket:
                 socket_list.extend(
                     sorted(glob.glob(os.path.join(runtime_dir, "wayfire-wayland-*.socket")))
                 )
-    
+
             socket_list.extend(
                 sorted(
                     [
@@ -32,7 +33,7 @@ class WayfireSocket:
                     ]
                 )
             )
-    
+
             for candidate in socket_list:
                 try:
                     self.connect_client(candidate)
@@ -40,11 +41,11 @@ class WayfireSocket:
                     break
                 except Exception:
                     pass
-    
+
         elif socket_name is not None:
             self.connect_client(socket_name)
             self.socket_name = socket_name
-    
+
         if self.socket_name is None:
             raise Exception("Failed to find a suitable Wayfire socket!")
 
