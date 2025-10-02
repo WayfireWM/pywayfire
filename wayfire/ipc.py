@@ -19,10 +19,11 @@ class WayfireSocket:
             # the last item is the most recent socket file
             socket_list = []
             runtime_dir = os.getenv("XDG_RUNTIME_DIR")
-            if runtime_dir is not None:
-                socket_list.extend(
-                    sorted(glob.glob(os.path.join(runtime_dir, "wayfire-wayland-*.socket")))
-                )
+            if runtime_dir is not None and os.path.isdir(runtime_dir):
+                for item in os.listdir(runtime_dir):
+                    if item.startswith("wayfire-wayland-") and item.endswith(".socket"):
+                        socket_list.append(os.path.join(runtime_dir, item))
+                socket_list.sort()
 
             socket_list.extend(
                 sorted(
