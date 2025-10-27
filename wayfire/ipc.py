@@ -6,6 +6,9 @@ import os
 from typing import Any, List, Optional
 from wayfire.core.template import get_msg_template, geometry_to_json
 
+class WayfireSocketError(Exception):
+    pass
+
 class WayfireSocket:
     def __init__(self, socket_name: str | None=None, allow_manual_search=False):
         if socket_name is None:
@@ -21,7 +24,7 @@ class WayfireSocket:
                 self.connect_client(socket_name)
                 self.socket_name = socket_name
             except Exception:
-                socket_name = None 
+                socket_name = None
 
         if self.socket_name is None and allow_manual_search:
             socket_list = self._find_candidate_sockets()
@@ -1098,3 +1101,18 @@ class WayfireSocket:
         message["data"]["view-id"] = view_id
         message["data"]["show-maximized"] = show_maximized
         return self.send_json(message)
+
+    def unblock_view_map(self, view_id: int):
+        """
+        Wayfire provides a mechanism to let IPC clients set the state of views immediately before they are mapped.
+        This happens automatically for any client which subscribes to the "view-pre-map" event.
+        When a client subscribes to "view-pre-map", Wayfire automatically delays the mapping of the view until the IPC
+        client unblocks the mapping by calling this method, or, alternatively, until the `core/transaction_timeout`
+        is reached, to avoid situations where the IPC client never responds.
+
+        Args:
+            view_id (int): The unique ID of the view to be unblocked.
+        """
+        msg = get_msg_template("window-rules/unblock-map")
+        msg["data"]["id"] = view_id
+        return self.send_json(msg)
