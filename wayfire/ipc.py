@@ -1116,3 +1116,22 @@ class WayfireSocket:
         msg = get_msg_template("window-rules/unblock-map")
         msg["data"]["id"] = view_id
         return self.send_json(msg)
+
+    def set_view_property(self, view_id: int, property_name: str, property_value: Any):
+        """
+        Sets a custom property for a specific view.
+
+        This method sends a request to set a custom property for a view identified by its unique ID.
+        The property is defined by its name and the value to be assigned.
+
+        Args:
+            view_id (int): The unique ID of the view for which the property is to be set.
+            property_name (str): The name of the property to be set.
+            property_value (Any): The value to assign to the property. Supported types are subject to what ipc-rules
+              supports, which includes strings, (u)int64_t, double and boolean properties.
+        """
+        msg = get_msg_template("window-rules/set-view-property")
+        msg["data"]["id"] = view_id
+        msg["data"]["property"] = property_name
+        msg["data"]["value"] = property_value
+        return self.send_json(msg)
