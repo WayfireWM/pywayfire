@@ -1059,7 +1059,7 @@ class WayfireSocket:
         Args:
             view_id (int): The unique ID of the tiled view.
             show_maximized (bool): True to set the view as 'show-maximized', False to unset it.
-    
+
         Returns:
             dict: The response from sending the JSON message. Contains "success" if the 'show-maximized' 
                   state was successfully set to the requested value (True or False), or "error" if 
