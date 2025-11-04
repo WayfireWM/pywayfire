@@ -1,6 +1,6 @@
 import socket
 import json as js
-import select 
+import select
 import time
 import os
 from typing import Any, List, Optional
@@ -196,9 +196,9 @@ class WayfireSocket:
         """
         Registers a new key or mouse binding.
 
-        This method allows you to register a binding (e.g., a key combination or mouse action) 
-        and specify the action that should be triggered when the binding is activated. You can 
-        provide additional options, such as the mode in which the binding is active and whether 
+        This method allows you to register a binding (e.g., a key combination or mouse action)
+        and specify the action that should be triggered when the binding is activated. You can
+        provide additional options, such as the mode in which the binding is active and whether
         the action should always be executed.
 
         Args:
@@ -206,7 +206,7 @@ class WayfireSocket:
             call_method (Optional[str]): The method to call when the binding is triggered.
             call_data (Optional): The data to pass to the method when the binding is triggered.
             command (Optional[str]): A command to execute when the binding is triggered.
-            mode (Optional[str]): The mode in which the binding is active. Valid values are "press" 
+            mode (Optional[str]): The mode in which the binding is active. Valid values are "press"
                 or "normal". Other modes can be specified as needed.
             exec_always (bool): If set to True, the action will be executed regardless of other conditions.
 
@@ -232,7 +232,7 @@ class WayfireSocket:
         """
         Unregisters a previously registered binding.
 
-        This method removes a binding identified by its unique ID. The binding will no longer 
+        This method removes a binding identified by its unique ID. The binding will no longer
         trigger any associated actions or commands.
 
         Args:
@@ -261,11 +261,11 @@ class WayfireSocket:
     def list_config_options(self):
         """
         Retrieve the complete Wayfire configuration as a nested JSON object.
-    
+
         This method fetches all configuration sections and their respective options.
         For each option, it returns the current value. For non-compound options,
         it also includes the default value.
-    
+
         Returns:
             A JSON object with the following structure:
             {
@@ -280,14 +280,14 @@ class WayfireSocket:
                     ...
                 }
             }
-    
+
         Example:
             For a simple (non-compound) option like 'core/plugins':
                 "plugins": {
                     "value": "alpha autostart blur ...",
                     "default": "alpha animate autostart ..."
                 }
-    
+
             For a compound option like 'command/bindings':
                 "bindings": {
                     "value": [
@@ -304,14 +304,14 @@ class WayfireSocket:
         """
         Retrieves the current value of a specified internal configuration option.
 
-        This method sends a request to get the value of an internal configuration option directly 
+        This method sends a request to get the value of an internal configuration option directly
         bypassing `wayfire.ini`.
 
         Args:
             option (str): The name of the internal configuration option whose value is to be retrieved.
 
         Returns:
-            The response from sending the JSON message, which includes the current value of the 
+            The response from sending the JSON message, which includes the current value of the
             specified internal configuration option.
         """
         message = get_msg_template("wayfire/get-config-option")
@@ -322,20 +322,20 @@ class WayfireSocket:
         """
         Sets multiple internal configuration options.
 
-        This method sanitizes and sends a request to update internal configuration options. It 
-        supports setting options both with and without hierarchical paths. If the option keys 
-        do not contain a "/", they are treated as base keys and are combined with their respective 
+        This method sanitizes and sends a request to update internal configuration options. It
+        supports setting options both with and without hierarchical paths. If the option keys
+        do not contain a "/", they are treated as base keys and are combined with their respective
         sub-options to form hierarchical paths.
 
         Args:
-            options (dict): A dictionary of configuration options to be set. The dictionary can 
+            options (dict): A dictionary of configuration options to be set. The dictionary can
                             contain:
-                            - Base keys with hierarchical sub-options (e.g., `key: {sub_key: value}`), 
+                            - Base keys with hierarchical sub-options (e.g., `key: {sub_key: value}`),
                               which will be formatted into hierarchical paths.
                             - Hierarchical paths directly as keys (e.g., `key/sub_key: value`).
 
         Returns:
-            The response from sending the JSON message, which confirms the update of the configuration 
+            The response from sending the JSON message, which confirms the update of the configuration
             options.
         """
         sanitized_options = {}
@@ -391,7 +391,7 @@ class WayfireSocket:
             output_id (int): The unique ID of the output whose information is to be retrieved.
 
         Returns:
-            The response from sending the JSON message, which includes information about the specified 
+            The response from sending the JSON message, which includes information about the specified
             output.
         """
         message = get_msg_template("window-rules/output-info")
@@ -428,14 +428,14 @@ class WayfireSocket:
         """
         Retrieves information about a specific workspace set.
 
-        This method sends a request to get detailed information about a workspace set identified 
+        This method sends a request to get detailed information about a workspace set identified
         by its unique ID.
 
         Args:
             id (int): The unique ID of the workspace set whose information is to be retrieved.
 
         Returns:
-            The response from sending the JSON message, which includes detailed information about 
+            The response from sending the JSON message, which includes detailed information about
             the specified workspace set.
         """
         message = get_msg_template("window-rules/wset-info")
@@ -454,7 +454,7 @@ class WayfireSocket:
             wset_index (int): The index of the workspace set to which the view should be moved.
 
         Returns:
-            The response from sending the JSON message, which confirms the action of moving the view to 
+            The response from sending the JSON message, which confirms the action of moving the view to
             the specified workspace set.
         """
         message = get_msg_template("wsets/send-view-to-wset")
@@ -466,7 +466,7 @@ class WayfireSocket:
         """
         Assigns an output to a specific workspace set.
 
-        This method sends a request to associate an output, identified by its unique ID, with a 
+        This method sends a request to associate an output, identified by its unique ID, with a
         particular workspace set specified by its index.
 
         Args:
@@ -474,7 +474,7 @@ class WayfireSocket:
             wset_index (int): The index of the workspace set to which the output should be assigned.
 
         Returns:
-            The response from sending the JSON message, which confirms the assignment of the output 
+            The response from sending the JSON message, which confirms the assignment of the output
             to the specified workspace set.
         """
         message = get_msg_template("wsets/set-output-wset")
@@ -487,7 +487,7 @@ class WayfireSocket:
         Subscribes to specific events or all events for monitoring.
 
         This method sends a request to start watching for specified events. If no events are provided,
-        it will subscribe to all available events. 
+        it will subscribe to all available events.
 
         Args:
             events (List[str] | None): A list of event names to watch. If `None`, subscribes to all events.
@@ -507,15 +507,15 @@ class WayfireSocket:
         Retrieves a list of all views, optionally filtering for mapped toplevel views.
 
         This method sends a request to get information about all views. If `filter_mapped_toplevel` is
-        set to `True`, it filters the results to include only views that are mapped, not part of the 
+        set to `True`, it filters the results to include only views that are mapped, not part of the
         desktop environment, and have a valid process ID.
 
         Args:
-            filter_mapped_toplevel (bool): Whether to filter the list to include only mapped toplevel views. 
+            filter_mapped_toplevel (bool): Whether to filter the list to include only mapped toplevel views.
                                            Defaults to `False`.
 
         Returns:
-            List[Any]: A list of views. If `filter_mapped_toplevel` is `True`, the list contains only views 
+            List[Any]: A list of views. If `filter_mapped_toplevel` is `True`, the list contains only views
                        that are mapped and meet the filtering criteria. Otherwise, it returns all views.
         """
         views = self.send_json(get_msg_template("window-rules/list-views"))
@@ -530,7 +530,7 @@ class WayfireSocket:
         Configures the properties of a specific view.
 
         This method sends a request to configure the position, size, and optionally the output assignment
-        for a view identified by its unique ID. The view's geometry is specified by its x and y coordinates, 
+        for a view identified by its unique ID. The view's geometry is specified by its x and y coordinates,
         width, and height. If `output_id` is provided, it assigns the view to the specified output.
 
         Args:
@@ -555,8 +555,8 @@ class WayfireSocket:
         """
         Assigns a view to a specified grid slot.
 
-        This method sends a request to assign a view, identified by its unique ID, to a specified slot 
-        within the grid. The slot is determined by the `slot` parameter, which should correspond to a valid 
+        This method sends a request to assign a view, identified by its unique ID, to a specified slot
+        within the grid. The slot is determined by the `slot` parameter, which should correspond to a valid
         grid slot identifier.
 
         Args:
@@ -564,7 +564,7 @@ class WayfireSocket:
             slot (str): The identifier of the grid slot to which the view should be assigned.
 
         Returns:
-            The response from sending the JSON message, which confirms the assignment of the view to the 
+            The response from sending the JSON message, which confirms the assignment of the view to the
             specified slot.
 
         Examples:
@@ -603,7 +603,7 @@ class WayfireSocket:
         """
         Sets focus to a specific view.
 
-        This method sends a request to change the focus to the view identified by its unique ID. The 
+        This method sends a request to change the focus to the view identified by its unique ID. The
         view will be brought to the foreground and receive input focus.
 
         Args:
@@ -620,7 +620,7 @@ class WayfireSocket:
         """
         Retrieves information about a specific view.
 
-        This method sends a request to obtain detailed information about a view identified by its unique ID. 
+        This method sends a request to obtain detailed information about a view identified by its unique ID.
         The information retrieved includes various attributes of the view.
 
         Args:
@@ -638,7 +638,7 @@ class WayfireSocket:
         """
         Configures an input device.
 
-        This method sends a request to enable or disable an input device identified by its unique ID. 
+        This method sends a request to enable or disable an input device identified by its unique ID.
         The `enabled` parameter determines whether the device should be activated or deactivated.
 
         Args:
@@ -657,7 +657,7 @@ class WayfireSocket:
         """
         Closes a specific view.
 
-        This method sends a request to close the view identified by its unique ID. The view will be terminated 
+        This method sends a request to close the view identified by its unique ID. The view will be terminated
         and removed from the display.
 
         Args:
@@ -674,11 +674,11 @@ class WayfireSocket:
         """
         Retrieves information about the currently focused view.
 
-        This method sends a request to obtain details about the view that is currently in focus. The 
+        This method sends a request to obtain details about the view that is currently in focus. The
         returned information includes various attributes of the focused view.
 
         Returns:
-            dict: A dictionary containing detailed information about the currently focused view. The 
+            dict: A dictionary containing detailed information about the currently focused view. The
                   information includes various attributes related to the view.
         """
         message = get_msg_template("window-rules/get-focused-view")
@@ -688,12 +688,12 @@ class WayfireSocket:
         """
         Retrieves information about the currently focused output.
 
-        This method sends a request to obtain details about the output that is currently in focus. The 
+        This method sends a request to obtain details about the output that is currently in focus. The
         returned information includes various attributes of the focused output.
 
         Returns:
-            dict or any: A dictionary containing detailed information about the currently focused output 
-                         if available. If the information is not present in the response, the raw response 
+            dict or any: A dictionary containing detailed information about the currently focused output
+                         if available. If the information is not present in the response, the raw response
                          is returned instead.
         """
         message = get_msg_template("window-rules/get-focused-output")
@@ -707,8 +707,8 @@ class WayfireSocket:
         """
         Sets the fullscreen state for a specific view.
 
-        This method sends a request to toggle the fullscreen state of a view identified by its unique ID. 
-        The `state` parameter determines whether the view should be set to fullscreen (`True`) or exit 
+        This method sends a request to toggle the fullscreen state of a view identified by its unique ID.
+        The `state` parameter determines whether the view should be set to fullscreen (`True`) or exit
         fullscreen mode (`False`).
 
         Args:
@@ -716,7 +716,7 @@ class WayfireSocket:
             state (bool): Whether to set the view to fullscreen (`True`) or exit fullscreen mode (`False`).
 
         Returns:
-            None: This method does not return any value. It sends a JSON message to update the fullscreen 
+            None: This method does not return any value. It sends a JSON message to update the fullscreen
                   state of the specified view.
         """
         message = get_msg_template("wm-actions/set-fullscreen")
@@ -746,7 +746,7 @@ class WayfireSocket:
                                        the currently focused output will be used. Defaults to `None`.
 
         Returns:
-            dict: The response from sending the JSON message, which typically confirms the workspace switch 
+            dict: The response from sending the JSON message, which typically confirms the workspace switch
                   and view movement if applicable.
         """
         if output_id is None:
@@ -764,15 +764,15 @@ class WayfireSocket:
     def send_view_to_workspace(self, view_id: int, x: int, y: int):
         """
         Sends a request to move a specific view to the specified workspace coordinates.
-    
+
         Args:
             view_id (int): The unique ID of the view to be moved.
             x (int): Target workspace x-coordinate.
             y (int): Target workspace y-coordinate.
 
-    
+
         Returns:
-            dict: The response from sending the JSON message, 
+            dict: The response from sending the JSON message,
                   which typically confirms the view was sent to the specified coordinates.
         """
         message = get_msg_template("vswitch/send-view")
@@ -789,8 +789,8 @@ class WayfireSocket:
         """
         Sets the sticky state for a specific view.
 
-        This method sends a request to change the sticky state of a view identified by its unique ID. 
-        The `state` parameter determines whether the view should be marked as sticky (`True`) or not 
+        This method sends a request to change the sticky state of a view identified by its unique ID.
+        The `state` parameter determines whether the view should be marked as sticky (`True`) or not
         sticky (`False`). A sticky view remains visible across all workspaces.
 
         Args:
@@ -810,9 +810,9 @@ class WayfireSocket:
         """
         Sends a view to the back or brings it to the front.
 
-        This method sends a request to change the z-order of a view identified by its unique ID. 
-        If `state` is `True`, the view is sent to the back of the stack, making it the lowest in 
-        z-order. If `state` is `False`, the view is brought to the front, making it the highest in 
+        This method sends a request to change the z-order of a view identified by its unique ID.
+        If `state` is `True`, the view is sent to the back of the stack, making it the lowest in
+        z-order. If `state` is `False`, the view is brought to the front, making it the highest in
         z-order.
 
         Args:
@@ -977,11 +977,11 @@ class WayfireSocket:
         """
         Retrieves a list of all input devices.
 
-        This method sends a request to obtain information about all input devices currently recognized by the system. 
+        This method sends a request to obtain information about all input devices currently recognized by the system.
         The response includes details about each device, such as its ID, type, and state.
 
         Returns:
-            dict: The response from sending the JSON message, which typically contains a list of input devices 
+            dict: The response from sending the JSON message, which typically contains a list of input devices
                   with their associated details.
         """
         message = get_msg_template("input/list-devices")
@@ -1009,7 +1009,7 @@ class WayfireSocket:
         """
         Retrieves the tiling layout for a specific workspace and workspace set.
 
-        This method sends a request to get the current tiling layout for the specified workspace and workspace set. 
+        This method sends a request to get the current tiling layout for the specified workspace and workspace set.
         The layout information includes how views are arranged in the given workspace.
 
         Args:
@@ -1033,14 +1033,14 @@ class WayfireSocket:
         """
         Sets the tiling layout for a specific workspace and workspace set.
 
-        This method sends a request to configure the tiling layout for the specified workspace and workspace set. 
+        This method sends a request to configure the tiling layout for the specified workspace and workspace set.
         The provided layout defines how views should be arranged in the given workspace.
 
         Args:
             wset (int): The index of the workspace set.
             x (int): The x-coordinate of the workspace within the workspace set.
             y (int): The y-coordinate of the workspace within the workspace set.
-            layout (dict): A dictionary representing the new layout to apply. 
+            layout (dict): A dictionary representing the new layout to apply.
 
         Returns:
             dict: The response from sending the JSON message, confirming the layout has been set.
@@ -1055,14 +1055,14 @@ class WayfireSocket:
 
     def set_tiling_maximized(self, view_id: int, show_maximized: bool):
         """
-            Set the maximized state of the currently focused tiled view.  
+            Set the maximized state of the currently focused tiled view.
         Args:
             view_id (int): The unique ID of the tiled view.
             show_maximized (bool): True to set the view as 'show-maximized', False to unset it.
 
         Returns:
-            dict: The response from sending the JSON message. Contains "success" if the 'show-maximized' 
-                  state was successfully set to the requested value (True or False), or "error" if 
+            dict: The response from sending the JSON message. Contains "success" if the 'show-maximized'
+                  state was successfully set to the requested value (True or False), or "error" if
                   the view is not found or not tiled.
         """
         message = get_msg_template("simple-tile/set-show-maximized")
