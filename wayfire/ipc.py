@@ -36,14 +36,16 @@ class WayfireSocket:
 
         if self.socket_name is None:
             if not allow_manual_search:
-                raise Exception(
+                raise WayfireSocketError(
                     "Failed to find a suitable Wayfire socket! "
-                    "Try allow_manual_search=True to look in standard locations."
+                    "Ensure 'ipc' and 'ipc-rules' are loaded and Wayfire is restarted, "
+                    "or try setting allow_manual_search=True to look in standard locations."
                 )
             else:
-                raise Exception(
+                raise WayfireSocketError(
                     "Failed to find a suitable Wayfire socket! "
-                    "Manual search was performed but found no working socket. "
+                    "Manual search was performed, but no working socket was found. "
+                    "Please ensure Wayfire's 'ipc' and 'ipc-rules' plugins are active."
                 )
 
     def _find_candidate_sockets(self) -> List[str]:
