@@ -1117,6 +1117,22 @@ class WayfireSocket:
         msg["data"]["id"] = view_id
         return self.send_json(msg)
 
+    def get_view_property(self, view_id: int, property_name: str):
+        """
+        Gets a specific property for a specific view.
+    
+        This method sends a request to get a specific property for a view
+        identified by its unique ID. The property is defined by its name.
+
+        Args:
+            view_id (int): The unique ID of the view for which the property is to be set.
+            property_name (str): The name of the property to be set.
+        """
+        msg = get_msg_template("window-rules/get-view-property")
+        msg["data"]["id"] = view_id
+        msg["data"]["property"] = property_name
+        return self.send_json(msg)
+
     def set_view_property(self, view_id: int, property_name: str, property_value: Any):
         """
         Sets a custom property for a specific view.
