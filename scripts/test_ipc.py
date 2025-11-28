@@ -91,6 +91,8 @@ def main():
             f"Original Alpha: {original_alpha}, Sticky: {original_sticky}, Fullscreen: {original_fullscreen}"
         )
 
+        print("\n=== Using set methods ===\n")
+
         print("Focusing view...")
         sock.set_focus(view_id)
 
@@ -105,6 +107,9 @@ def main():
 
         print("Toggling fullscreen...")
         sock.set_view_fullscreen(view_id, not original_fullscreen)
+
+        print("Setting a new view property...")
+        sock.set_view_property(view_id, "test", True)
 
         print("Setting always-on-top...")
         sock.set_view_always_on_top(view_id, True)
@@ -129,25 +134,55 @@ def main():
         output_id = view["output-id"]
         sock.set_output_wset(output_id, wset_index)
 
-        print("Using get functions")
+        print("\n=== Using get methods ===\n")
+
+        print("Getting focused view details...")
         sock.get_focused_view()
+
+        print("Getting cursor position...")
         sock.get_cursor_position()
-        focused_output_id = sock.get_focused_output()["id"]
+
+        print("Getting focused output details...")
+        focused_output = sock.get_focused_output()
+        focused_output_id = focused_output["id"]
+
+        print(f"Getting view details for ID: {view_id}...")
         sock.get_view(view_id)
+
+        print("Getting configuration option value for 'core/plugins'...")
         sock.get_option_value("core/plugins")
+
+        print(f"Getting custom property 'test' for view ID: {view_id}...")
+        sock.get_view_property(view_id, "test")
+
+        print("Getting full configuration...")
         sock.get_configuration()
+
+        print(f"Getting output details for focused output ID: {focused_output_id}...")
         sock.get_output(focused_output_id)
-        layout_index = sock.get_keyboard_layout()["layout-index"]
+        
+        print("Getting keyboard layout information...")
+        keyboard_layout = sock.get_keyboard_layout()
+        layout_index = keyboard_layout["layout-index"]
 
-        print("Setting keyboard layout")
-        sock.set_keyboard_layout(layout_index)
-
-        print("Using list functions")
+        print("\n=== Using list methods ===\n")
+        
+        print("Listing all mapped views...")
         sock.list_views()
+        
+        print("Listing all available Wayfire methods...")
         sock.list_methods()
+        
+        print("Listing all connected input devices...")
         sock.list_input_devices()
+        
+        print("Listing all workspace sets (wsets)...")
         sock.list_wsets()
+        
+        print("Listing all configured outputs (monitors)...")
         sock.list_outputs()
+
+        print("\n=== Using other methods ===\n")
 
         print(f"Assign {TERMINAL} to the slots")
         positions = ["tl", "tr", "bl", "br", "br", "t", "b", "l", "r", "c"]
