@@ -123,6 +123,11 @@ def main():
         print("Setting view minimized")
         sock.set_view_minimized(view_id, True)
 
+        print("Setting keyboard layout")
+        keyboard_layout = sock.get_keyboard_layout()
+        layout_index = keyboard_layout["layout-index"]
+        sock.set_keyboard_layout(layout_index)
+
         print("Sending view to back")
         sock.send_view_to_back(view_id, True)
 
