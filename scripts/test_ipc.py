@@ -172,7 +172,7 @@ def main():
 
         print("\n=== Using list methods ===\n")
         
-        print("Listing all mapped views...")
+        print("Listing all views...")
         sock.list_views()
         
         print("Listing all available Wayfire methods...")
