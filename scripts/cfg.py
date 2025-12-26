@@ -1,3 +1,15 @@
+#!/usr/bin/python3
+
+# This script gets or sets a wayfire configuration option
+#
+# NOTE: After setting an option with this script,
+#       changes to the option in config and wcm
+#       will be ignored until wayfire restart
+#
+# Usage:
+# ./cfg.py get plugin-section/option_name
+# ./cfg.py set plugin-section/option_name value
+
 from wayfire import WayfireSocket
 import sys
 
