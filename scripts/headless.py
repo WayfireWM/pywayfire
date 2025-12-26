@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from wayfire import WayfireSocket
 import json
 import argparse
