@@ -16,6 +16,7 @@ OR
 ```
 git clone https://github.com/WayfireWM/pywayfire
 cd pywayfire
+# for a venv: python3 -m venv .venv && . .venv/bin/activate
 python3 -m pip install .
 ```
 
