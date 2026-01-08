@@ -1,4 +1,4 @@
-The [Wayfire] compositor provides access to its functionalities via Inter-Process Communication (IPC). This repository contains the source code for the python client bindings, as well as hosts many examples of how to use the IPC.
+The [Wayfire](https://wayfire.org/) compositor provides access to its functionalities via Inter-Process Communication (IPC). This repository contains the source code for the python client bindings, as well as many examples of how to use the IPC.
 
 ## Quickstart
 
@@ -16,6 +16,7 @@ OR
 ```
 git clone https://github.com/WayfireWM/pywayfire
 cd pywayfire
+# for a venv: python3 -m venv .venv && . .venv/bin/activate
 python3 -m pip install .
 ```
 
