@@ -523,35 +523,71 @@ class WayfireSocket:
 
         Supported events:
 
-        View-related:
-          - "view-focused"                Emitted when a view gains focus
-          - "view-unmapped"               Emitted when a view is closed
-          - "view-pre-map"                Emitted before a view is mapped
-          - "view-mapped"                 Emitted when a view becomes visible
-          - "view-title-changed"          Emitted when a view title changes
-          - "view-app-id-changed"         Emitted when a view app-id changes
-          - "view-set-output"             Emitted when a view moves to another output
-          - "view-workspace-changed"      Emitted when a view moves to another workspace
-          - "view-wset-changed"           Emitted when a view changes workspace set
-          - "view-geometry-changed"       Emitted when view size or position changes
-          - "view-tiled"                  Emitted when a view is tiled
-          - "view-minimized"              Emitted when a view is minimized
-          - "view-fullscreen"             Emitted when a view enters fullscreen
-          - "view-sticky"                 Emitted when a view becomes sticky
+        view-focused
+            Emitted when input focus changes.
+            The `view` field may be a toplevel view or None.
+            A None value commonly occurs during switcher or overview plugins.
 
-        Workspace / workspace-set:
-          - "workspace-activated"         Emitted when a workspace is activated
-          - "wset-workspace-changed"      Emitted when the active workspace changes
+        view-unmapped
+            Emitted when a view is hidden or closed.
 
-        Output-related:
-          - "output-gain-focus"           Emitted when an output gains focus
-          - "output-wset-changed"         Emitted when an output's workspace set changes
-          - "output-layout-changed"       Emitted when the output layout changes
-          - "output-removed"              Emitted when an output is removed
+        view-pre-map
+            Emitted immediately before a view is mapped.
+            Mapping may be delayed until `unblock-map` is called.
 
-        Plugin-related:
-          - "plugin-activation-state-changed"
-                                          Emitted when a plugin is activated or deactivated
+        view-mapped
+            Emitted when a view becomes visible on screen.
+
+        view-title-changed
+            Emitted when a view title changes.
+
+        view-app-id-changed
+            Emitted when a view application ID changes.
+
+        view-set-output
+            Emitted when a view is moved to another output (monitor).
+
+        view-workspace-changed
+            Emitted when a view changes workspace.
+
+        view-wset-changed
+            Emitted when a view changes workspace set.
+
+        view-geometry-changed
+            Emitted when a view position or size changes.
+
+        view-tiled
+            Emitted when a view is tiled or snapped.
+
+        view-minimized
+            Emitted when a view is minimized or restored.
+
+        view-fullscreen
+            Emitted when a view enters or exits fullscreen.
+
+        view-sticky
+            Emitted when a view becomes sticky or unsticky.
+
+        workspace-activated
+            Emitted when a workspace is activated.
+
+        wset-workspace-changed
+            Emitted when the active workspace inside a workspace set changes.
+
+        output-gain-focus
+            Emitted when an output gains input focus.
+
+        output-wset-changed
+            Emitted when an output changes workspace set.
+
+        output-layout-changed
+            Emitted when output configuration changes.
+
+        plugin-activation-state-changed
+            Emitted when a plugin is activated or deactivated.
+
+        keyboard-modifier-state-changed
+            Emitted when keyboard modifier keys change state.
 
         Args:
             events (List[str] | None):
