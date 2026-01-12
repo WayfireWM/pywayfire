@@ -534,6 +534,7 @@ class WayfireSocket:
         view-pre-map
             Emitted immediately before a view is mapped.
             Mapping may be delayed until `unblock-map` is called.
+            NOTE: This event is only received if explicitly subscribed to.
 
         view-mapped
             Emitted when a view becomes visible on screen.
@@ -588,6 +589,7 @@ class WayfireSocket:
 
         keyboard-modifier-state-changed
             Emitted when keyboard modifier keys change state.
+            There could also be other plugin-specific events.
 
         Args:
             events (List[str] | None):
