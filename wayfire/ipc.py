@@ -516,17 +516,88 @@ class WayfireSocket:
 
     def watch(self, events: List[str] | None = None):
         """
-        Subscribes to specific events or all events for monitoring.
+        Subscribes to specific Wayfire IPC events or to all events.
 
-        This method sends a request to start watching for specified events. If no events are provided,
-        it will subscribe to all available events.
+        If no events are provided, the client will receive *all* events
+        emitted by Wayfire.
+
+        Supported events:
+
+        view-focused
+            Emitted when input focus changes.
+            The `view` field may be a toplevel view or None.
+            A None value commonly occurs during switcher or overview plugins.
+
+        view-unmapped
+            Emitted when a view is hidden or closed.
+
+        view-pre-map
+            Emitted immediately before a view is mapped.
+            Mapping may be delayed until `unblock-map` is called.
+            NOTE: This event is only received if explicitly subscribed to.
+
+        view-mapped
+            Emitted when a view becomes visible on screen.
+
+        view-title-changed
+            Emitted when a view title changes.
+
+        view-app-id-changed
+            Emitted when a view application ID changes.
+
+        view-set-output
+            Emitted when a view is moved to another output (monitor).
+
+        view-workspace-changed
+            Emitted when a view changes workspace.
+
+        view-wset-changed
+            Emitted when a view changes workspace set.
+
+        view-geometry-changed
+            Emitted when a view position or size changes.
+
+        view-tiled
+            Emitted when a view is tiled or snapped.
+
+        view-minimized
+            Emitted when a view is minimized or restored.
+
+        view-fullscreen
+            Emitted when a view enters or exits fullscreen.
+
+        view-sticky
+            Emitted when a view becomes sticky or unsticky.
+
+        workspace-activated
+            Emitted when a workspace is activated.
+
+        wset-workspace-changed
+            Emitted when the active workspace inside a workspace set changes.
+
+        output-gain-focus
+            Emitted when an output gains input focus.
+
+        output-wset-changed
+            Emitted when an output changes workspace set.
+
+        output-layout-changed
+            Emitted when output configuration changes.
+
+        plugin-activation-state-changed
+            Emitted when a plugin is activated or deactivated.
+
+        keyboard-modifier-state-changed
+            Emitted when keyboard modifier keys change state.
+            There could also be other plugin-specific events.
 
         Args:
-            events (List[str] | None): A list of event names to watch. If `None`, subscribes to all events.
+            events (List[str] | None):
+                List of event names to subscribe to.
+                If None, subscribes to all available events.
 
         Returns:
-            The response from sending the JSON message, which confirms the subscription to the specified
-            events.
+            The response from sending the JSON message confirming the subscription.
         """
         method = "window-rules/events/watch"
         message = get_msg_template(method)
