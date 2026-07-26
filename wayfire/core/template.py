@@ -10,7 +10,7 @@ def get_msg_template(method: str) -> Dict[str, Any]:
     return message
 
 
-def geometry_to_json(x: int, y: int, w: int, h: int):
+def geometry_to_json(x: float, y: float, w: float, h: float):
     geometry = {}
     geometry["x"] = x
     geometry["y"] = y

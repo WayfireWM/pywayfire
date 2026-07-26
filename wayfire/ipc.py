@@ -205,6 +205,16 @@ class WayfireSocket:
         message = get_msg_template("wayfire/configuration")
         return self.send_json(message)
 
+    def reload_config_metadata(self):
+        """Reload configuration metadata and option values from the active backend."""
+        message = get_msg_template("wayfire/reload-config-metadata")
+        return self.send_json(message)
+
+    def reload_plugins(self):
+        """Reload dynamic plugins from the current ``core/plugins`` option."""
+        message = get_msg_template("wayfire/reload-plugins")
+        return self.send_json(message)
+
     def get_keyboard_layout(self):
         message = get_msg_template("wayfire/get-keyboard-state")
         return self.send_json(message)
@@ -628,21 +638,36 @@ class WayfireSocket:
             return [v for v in views if v["mapped"] is True and v["role"] != "desktop-environment" and v["pid"] != -1]
         return views
 
-    def configure_view(self, view_id: int, x: int, y: int, w: int, h: int, output_id = None):
+    def configure_view(
+        self,
+        view_id: int,
+        x: float,
+        y: float,
+        w: float,
+        h: float,
+        output_id: Optional[int] = None,
+        *,
+        sticky: Optional[bool] = None,
+        tiled_edges: Optional[int] = None,
+        fullscreen: Optional[bool] = None,
+    ):
         """
         Configures the properties of a specific view.
 
-        This method sends a request to configure the position, size, and optionally the output assignment
-        for a view identified by its unique ID. The view's geometry is specified by its x and y coordinates,
-        width, and height. If `output_id` is provided, it assigns the view to the specified output.
+        This method sends one request to configure a view's geometry and optional output,
+        sticky, tiled, and fullscreen state. Geometry, tiled edges, and fullscreen are
+        applied by Wayfire in the same transaction.
 
         Args:
             view_id (int): The unique ID of the view to be configured.
-            x (int): The x-coordinate of the view's position.
-            y (int): The y-coordinate of the view's position.
-            w (int): The width of the view.
-            h (int): The height of the view.
+            x (float): The x-coordinate of the view's position.
+            y (float): The y-coordinate of the view's position.
+            w (float): The width of the view.
+            h (float): The height of the view.
             output_id (Optional[int]): The ID of the output to which the view should be assigned. Defaults to `None`.
+            sticky (Optional[bool]): Whether the view is visible on every workspace.
+            tiled_edges (Optional[int]): A bitmask of tiled edges, from 0 through 15.
+            fullscreen (Optional[bool]): The requested fullscreen state.
 
         Returns:
             The response from sending the JSON message, which confirms the configuration of the view.
@@ -652,6 +677,12 @@ class WayfireSocket:
         message["data"]["geometry"] = geometry_to_json(x, y, w, h)
         if output_id is not None:
             message["data"]["output_id"] = output_id
+        if sticky is not None:
+            message["data"]["sticky"] = sticky
+        if tiled_edges is not None:
+            message["data"]["tiled-edges"] = tiled_edges
+        if fullscreen is not None:
+            message["data"]["fullscreen"] = fullscreen
         return self.send_json(message)
 
     def assign_slot(self, view_id: int, slot: str):
@@ -911,16 +942,15 @@ class WayfireSocket:
 
     def send_view_to_back(self, view_id: int, state: bool):
         """
-        Sends a view to the back or brings it to the front.
+        Sends a view to the back.
 
-        This method sends a request to change the z-order of a view identified by its unique ID.
-        If `state` is `True`, the view is sent to the back of the stack, making it the lowest in
-        z-order. If `state` is `False`, the view is brought to the front, making it the highest in
-        z-order.
+        The Wayfire endpoint requires a state field for consistency with other window
+        actions, but the send-to-back action does not use its value. Use
+        :meth:`bring_view_to_front` for the inverse operation.
 
         Args:
             view_id (int): The unique ID of the view whose z-order is to be changed.
-            state (bool): Whether to send the view to the back (`True`) or bring it to the front (`False`).
+            state (bool): Required by the endpoint but ignored by the action.
 
         Returns:
             dict: The response from sending the JSON message, which typically confirms the update to the view’s
@@ -929,6 +959,13 @@ class WayfireSocket:
         message = get_msg_template("wm-actions/send-to-back")
         message["data"]["view_id"] = view_id
         message["data"]["state"] = state
+        return self.send_json(message)
+
+    def bring_view_to_front(self, view_id: int):
+        """Bring a view to the front of the stacking order."""
+        message = get_msg_template("wm-actions/bring-to-front")
+        message["data"]["view_id"] = view_id
+        message["data"]["state"] = True
         return self.send_json(message)
 
     def set_view_minimized(self, view_id: int, state: bool):

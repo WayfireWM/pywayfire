@@ -30,15 +30,15 @@ class Stipc:
         message["data"]["views"] = msg_layout
         return self.socket.send_json(message)
 
-    def move_cursor(self, x: int, y: int):
+    def move_cursor(self, x: float, y: float):
         """
         Move the cursor to a specified position.
 
         This method sets the cursor's position to the given coordinates (x, y).
 
         Args:
-            x (int): The x-coordinate to move the cursor to.
-            y (int): The y-coordinate to move the cursor to.
+            x (float): The x-coordinate to move the cursor to.
+            y (float): The y-coordinate to move the cursor to.
 
         """
         message = get_msg_template("stipc/move_cursor")
@@ -46,7 +46,7 @@ class Stipc:
         message["data"]["y"] = y
         return self.socket.send_json(message)
 
-    def set_touch(self, id: int, x: int, y: int):
+    def set_touch(self, id: int, x: float, y: float):
         method = "stipc/touch"
         message = get_msg_template(method)
         message["data"]["finger"] = id

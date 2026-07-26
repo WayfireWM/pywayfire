@@ -51,4 +51,3 @@ Many examples can be found in the `scripts` directory.
 
 Make sure `ipc` and `ip-rules` plugins are activated. Try running with environmental variable:
 `WAYFIRE_SOCKET=/run/user/$(id -u)/wayland-1`
-

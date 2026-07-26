@@ -70,7 +70,7 @@ def restore_state(view_id, original_alpha, original_sticky, original_fullscreen)
     sock.set_view_always_on_top(view_id, False)
     sock.set_view_minimized(view_id, False)
     sock.set_option_values({"core/xwayland": True})
-    sock.send_view_to_back(view_id, False)
+    sock.bring_view_to_front(view_id)
 
     print("[RESTORE] Done.")
 

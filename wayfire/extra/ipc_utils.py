@@ -456,6 +456,9 @@ class WayfireUtils:
     def get_focused_view_sticky(self):
         return self.get_focused_view("sticky")
 
+    def get_focused_view_always_on_top(self):
+        return self.get_focused_view("always-on-top")
+
     def get_focused_view_tiled_edges(self):
         return self.get_focused_view("tiled-edges")
 
@@ -528,6 +531,9 @@ class WayfireUtils:
 
     def get_view_sticky(self, view_id: int):
         return self.get_view(view_id, "sticky")
+
+    def get_view_always_on_top(self, view_id: int):
+        return self.get_view(view_id, "always-on-top")
 
     def get_view_tiled_edges(self, view_id: int):
         return self.get_view(view_id, "tiled-edges")
