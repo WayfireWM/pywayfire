@@ -579,6 +579,9 @@ class WayfireSocket:
         view-sticky
             Emitted when a view becomes sticky or unsticky.
 
+        view-always-on-top
+            Emitted when a view always-on-top state changes.
+
         workspace-activated
             Emitted when a workspace is activated.
 
